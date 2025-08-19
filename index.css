@@ -1,0 +1,117 @@
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #1a1a1a;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #4f46e5;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #6366f1;
+}
+
+/* Custom Text Selection */
+::selection {
+  background-color: #4f46e5;
+  color: #e0e0e0;
+}
+
+/* General Transition */
+.transition-all {
+  transition: all 0.3s ease-in-out;
+}
+
+/* NavLink underline animation from original design */
+.nav-link-underline {
+  position: relative;
+  padding-bottom: 4px;
+}
+.nav-link-underline::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 2px;
+  background-color: #818cf8; /* indigo-400 */
+  transform: scaleX(0);
+  transition: transform 0.3s ease-in-out;
+  transform-origin: center;
+}
+.nav-link-underline:hover::after,
+.nav-link-underline.active::after {
+  transform: scaleX(1);
+}
+
+/* Animation for Cart Notification */
+@keyframes fadeInRight {
+  from {
+    opacity: 0;
+    transform: translateX(25px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+.animate-fade-in-right {
+  animation: fadeInRight 0.3s ease-out;
+}
+
+
+/* --- Engraving Material Effects --- */
+
+/* A subtle, debossed look with a slight depression. Best on a dark leather texture. */
+.engraved-leather, .engraved-leather img, .engraved-leather svg {
+  color: rgba(0, 0, 0, 0.7);
+  text-shadow: 0px 1px 1px rgba(255, 255, 255, 0.1);
+  filter: drop-shadow(0px 1px 1px rgba(255, 255, 255, 0.1)) brightness(0.7) contrast(1.1);
+}
+
+/* A clean, sharp look for laser etching on dark anodized metal. */
+.engraved-metal, .engraved-metal img, .engraved-metal svg {
+  color: #E5E7EB; /* Off-white/light gray */
+  text-shadow: 0px 1px 2px rgba(0, 0, 0, 0.8);
+  filter: drop-shadow(0px 1px 2px rgba(0, 0, 0, 0.8)) brightness(1.5) contrast(1.5);
+}
+
+/* A darker, burned-in look with a textured feel. Best on a medium wood grain. */
+.engraved-wood, .engraved-wood img, .engraved-wood svg {
+  color: #3a2e25; /* Dark, burnt wood color */
+  text-shadow: 0px 1px 2px rgba(0, 0, 0, 0.7);
+  filter: drop-shadow(0px 1px 2px rgba(0, 0, 0, 0.7)) brightness(0.6) contrast(1.2) sepia(0.3);
+}
+
+/* A frosty, white or light gray appearance with a soft shadow. */
+.engraved-glass, .engraved-glass img, .engraved-glass svg {
+  color: rgba(240, 240, 240, 0.85); /* Frosty, slightly transparent white */
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.2)) brightness(1.2) opacity(0.85);
+}
+
+/* A chiseled look that simulates carving into dark stone. */
+.engraved-slate, .engraved-slate img, .engraved-slate svg {
+  color: #B0B0B0; /* Light gray to simulate etching */
+  text-shadow: 1px 1px 1px rgba(255, 255, 255, 0.1); /* Bottom/right subtle highlight */
+  filter: drop-shadow(1px 1px 1px rgba(255, 255, 255, 0.1)) brightness(1.8) contrast(0.5);
+}
+
+/* A rustic, dark look with a slightly rough shadow. Best on a cork texture. */
+.engraved-cork, .engraved-cork img, .engraved-cork svg {
+  color: #6B4F3A; /* Dark brown, like burnt cork */
+  text-shadow: 0px 2px 3px rgba(0, 0, 0, 0.5);
+  filter: drop-shadow(0px 2px 3px rgba(0, 0, 0, 0.5)) brightness(0.8) contrast(1.1);
+}
+
+/* A crisp, clean look for debossing on paper. Best on a light-colored paper texture. */
+.engraved-paper, .engraved-paper img, .engraved-paper svg {
+  color: rgba(0, 0, 0, 0.3);
+  text-shadow: 0px 1px 0px rgba(255, 255, 255, 0.8); /* Subtle top highlight to create depression */
+  filter: drop-shadow(0px 1px 0px rgba(255, 255, 255, 0.8)) brightness(0.95);
+}
