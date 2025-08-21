@@ -64,7 +64,7 @@ export const DESIGN_LIBRARY_ITEMS = [
   },
   {
     name: 'Paw Print',
-    svg: `<svg viewBox="0 0 100 100" width="100%" height="100%" fill="currentColor"><path d="M78.1,53.3c-2.3-1.2-5.1-1-7.2,0.6c-2.1,1.6-3,4.2-2.3,6.7c1.7,5.9,3.8,11.7,6.3,17.2c1.2,2.6,3.9,4.2,6.7,3.9 c2.8-0.3,5.1-2.4,5.4-5.2c1.1-7.7,1.1-15.5-0.1-23.2C85.5,50.1,81.9,50.2,78.1,53.3z"/><path d="M49.8,55c-2.1-1.3-4.8-1.4-6.9-0.3c-2.1,1.1-3.6,3.1-4.2,5.4c-2.2,8.3-2,16.7-0.1,25c0.5,2.3,2.4,4.2,4.8,4.6 c2.4,0.4,4.8-0.7,6.1-2.7c2.5-3.8,4.5-7.9,5.9-12.1C56.6,68.9,54.1,60.5,49.8,55z"/><path d="M21.5,53.7c-3.7-3.1-9-2-11.4,2.5c-2.4,4.5-1,10.1,3,13.1c1.9,1.4,4.2,2.1,6.5,2c2.5-0.1,4.9-1.3,6.5-3.2 c3.4-4,5.4-8.8,6.3-13.8C33,51.8,27.3,49.3,21.5,53.7z"/><path d="M51.2,16.2c-5.7-0.4-11.2,2-14.8,6.2c-4.9,5.7-6,13.6-2.8,20.3c3.2,6.7,9.6,11.2,16.9,11.2c7.1,0,13.4-4.4,16.5-10.9 c3.1-6.5,2.1-14.3-2.6-20.1C60.2,17.8,55.8,16.4,51.2,16.2z"/></svg>`
+    svg: `<svg viewBox="0 0 100 100" width="100%" height="100%" fill="currentColor"><path d="M78.1,53.3c-2.3-1.2-5.1-1-7.2,0.6c-2.1,1.6-3,4.2-2.3,6.7c1.7,5.9,3.8,11.7,6.3,17.2c1.2,2.6,3.9,4.2,6.7,3.9 c2.8-0.3,5.1-2.4,5.4-5.2c1.1-7.7,1.1-15.5-0.1-23.2C85.5,50.1,81.9,50.2,78.1,53.3z"/><path d="M49.8,55c-2.1-1.3-4.8-1.4-6.9-0.3c-2.1,1.1-3.6,3.1-4.2,5.4c-2.2,8.3-2,16.7-0.1,25c0.5,2.3,2.4,4.2,4.8,4.6 c2.4,0.4,4.8-0.7,6.1-2.7c2.5-3.8,4.5-7.9,5.9-12.1C56.6,68.9,5.1,60.5,49.8,55z"/><path d="M21.5,53.7c-3.7-3.1-9-2-11.4,2.5c-2.4,4.5-1,10.1,3,13.1c1.9,1.4,4.2,2.1,6.5,2c2.5-0.1,4.9-1.3,6.5-3.2 c3.4-4,5.4-8.8,6.3-13.8C33,51.8,27.3,49.3,21.5,53.7z"/><path d="M51.2,16.2c-5.7-0.4-11.2,2-14.8,6.2c-4.9,5.7-6,13.6-2.8,20.3c3.2,6.7,9.6,11.2,16.9,11.2c7.1,0,13.4-4.4,16.5-10.9 c3.1-6.5,2.1-14.3-2.6-20.1C60.2,17.8,55.8,16.4,51.2,16.2z"/></svg>`
   },
   {
     name: 'Mountains',
@@ -123,6 +123,48 @@ export const IMAGE_FEE_PRODUCT_VARIANT_ID = 'gid://shopify/ProductVariant/469686
 
 
 export const productCatalog: { [key: string]: Product } = {
+  // Home Decor
+  'slate-coasters': {
+    id: 'slate-coasters',
+    name: 'Slate Coasters',
+    category: 'Home Decor',
+    description: 'Natural slate coasters, perfect for protecting surfaces with a rustic, elegant touch. Personalize them with a logo, monogram, or custom design. Each coaster has padded feet to prevent scratching.',
+    basePrice: 12.00,
+    variations: [
+      { 
+        id: 'slate-coaster-hexagon', 
+        name: 'Hexagon',
+        material: 'slate',
+        mockupImage: 'https://cdn.shopify.com/s/files/1/0762/2433/2021/files/slate-coaster-hexagon.png?v=1755435099',
+        variantId: 'gid://shopify/ProductVariant/46969021464821',
+        engravingZones: [{ id: 'center', name: 'Center', bounds: { x: 250, y: 150, width: 300, height: 300 } }] 
+      },
+      { 
+        id: 'slate-coaster-circle', 
+        name: 'Circle',
+        material: 'slate',
+        mockupImage: 'https://cdn.shopify.com/s/files/1/0762/2433/2021/files/slate-coaster-circle.png?v=1755435099',
+        variantId: 'gid://shopify/ProductVariant/46969021497589',
+        engravingZones: [{ id: 'center', name: 'Center', bounds: { x: 250, y: 150, width: 300, height: 300 } }] 
+      },
+      { 
+        id: 'slate-coaster-heart', 
+        name: 'Heart',
+        material: 'slate',
+        mockupImage: 'https://cdn.shopify.com/s/files/1/0762/2433/2021/files/slate-coaster-heart.png?v=1755435099',
+        variantId: 'gid://shopify/ProductVariant/46969021530357',
+        engravingZones: [{ id: 'center', name: 'Center', bounds: { x: 250, y: 150, width: 300, height: 300 } }] 
+      },
+      { 
+        id: 'slate-coaster-square', 
+        name: 'Square',
+        material: 'slate',
+        mockupImage: 'https://cdn.shopify.com/s/files/1/0762/2433/2021/files/slate-coaster-square.png?v=1755435099',
+        variantId: 'gid://shopify/ProductVariant/46969021563125',
+        engravingZones: [{ id: 'center', name: 'Center', bounds: { x: 250, y: 150, width: 300, height: 300 } }] 
+      }
+    ]
+  },
   // Drinkware & Barware
   /*
   'tumbler': {

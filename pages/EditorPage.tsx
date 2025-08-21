@@ -452,15 +452,22 @@ const EditorPage: React.FC = () => {
     const priceAndAddImage = async (imageData: string, type: 'svg' | 'png') => {
         setIsPricingImage(true);
         showNotification("Calculating engraving price for image...");
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+
         try {
             const response = await fetch('/.netlify/functions/image-pricing', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ imageData }),
+                signal: controller.signal,
             });
 
+            clearTimeout(timeoutId);
+
             if (!response.ok) {
-                throw new Error('Failed to get pricing from server.');
+                const errorBody = await response.json().catch(() => ({ error: 'Could not parse error response.' }));
+                throw new Error(errorBody.error || `Failed to get pricing from server. Status: ${response.status}`);
             }
 
             const { price } = await response.json();
@@ -486,9 +493,14 @@ const EditorPage: React.FC = () => {
                 showNotification(`Image added! Engraving fee: $${price.toFixed(2)}`);
             });
 
-        } catch (error) {
-            console.error("Image pricing error:", error);
-            showNotification("Error: Could not calculate image price. Please try again.");
+        } catch (error: any) {
+             if (error.name === 'AbortError') {
+                console.error("Image pricing request timed out.");
+                showNotification("Error: The request took too long. The file might be too complex.");
+            } else {
+                console.error("Image pricing error:", error);
+                showNotification(`Error: ${error.message || "Could not calculate image price. Please try again."}`);
+            }
         } finally {
             setIsPricingImage(false);
         }
@@ -557,7 +569,7 @@ const EditorPage: React.FC = () => {
         }
     }
     
-    const MAX_FILE_SIZE_MB = 5;
+    const MAX_FILE_SIZE_MB = 4; // Reduced to account for base64 overhead and Netlify's 6MB limit
     const MAX_FILE_SIZE_BYTES = MAX_FILE_SIZE_MB * 1024 * 1024;
     const MAX_PNG_DIMENSION = 2000;
     const MAX_SVG_ELEMENTS = 10000;
