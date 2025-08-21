@@ -4,7 +4,7 @@ import type { ShopifyCart, CartItem } from '../types';
 // To prevent Cross-Origin (CORS) issues in a buildless setup, we use a public CORS proxy.
 // This proxy adds the necessary CORS headers to the Shopify API response, allowing the browser to connect.
 // NOTE: For production applications, it is recommended to host your own CORS proxy for security and reliability.
-const SHOPIFY_API_URL = `https://api.allorigins.win/raw?url=https://${SHOPIFY_STORE_DOMAIN}/api/2024-04/graphql.json`;
+const SHOPIFY_API_URL = `https://corsproxy.io/?https://${SHOPIFY_STORE_DOMAIN}/api/2024-04/graphql.json`;
 
 
 const storefrontApi = async <T>(query: string, variables: Record<string, any> = {}): Promise<T> => {

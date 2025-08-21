@@ -102,14 +102,15 @@ const FontSizeInput: React.FC<{ value: number; onChange: (size: number) => void;
 
     return (
         <div className="flex items-center border border-gray-300 rounded-md h-12 bg-white">
-            <button onClick={() => step(-1)} className="px-3 h-full hover:bg-gray-200 text-lg rounded-l-md transition-colors">-</button>
+            <button onClick={() => step(-5)} className="px-3 h-full hover:bg-gray-200 text-lg rounded-l-md transition-colors">-</button>
             <input 
                 type="number"
                 value={value}
                 onChange={handleChange}
-                className="w-16 h-full text-center p-1 border-l border-r border-gray-300 text-base bg-white text-gray-800 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                className="w-16 h-full text-center p-1 border-l border-r border-gray-300 text-base bg-white text-gray-800 focus:outline-none focus:ring-1 focus:ring-indigo-500 font-size-input"
+                min="1"
             />
-            <button onClick={() => step(1)} className="px-3 h-full hover:bg-gray-200 text-lg rounded-r-md transition-colors">+</button>
+            <button onClick={() => step(5)} className="px-3 h-full hover:bg-gray-200 text-lg rounded-r-md transition-colors">+</button>
         </div>
     );
 };

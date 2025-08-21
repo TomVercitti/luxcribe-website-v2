@@ -220,6 +220,15 @@ const EditorPage: React.FC = () => {
         });
         fabricRef.current = canvas;
         
+        // Customize fabric controls globally to ensure a consistent look and feel
+        window.fabric.Object.prototype.transparentCorners = false;
+        window.fabric.Object.prototype.cornerColor = '#6366f1';
+        window.fabric.Object.prototype.cornerStyle = 'circle';
+        window.fabric.Object.prototype.borderColor = '#6366f1';
+        // Add a visible rotation control handle that extends from the top of objects
+        window.fabric.Object.prototype.controls.mtr.offsetY = -30;
+        window.fabric.Object.prototype.controls.mtr.cursorStyle = 'grab';
+
         const setBackgroundImage = () => {
           window.fabric.Image.fromURL(productData.variation.mockupImage, (img: any) => {
               if (img) {
@@ -267,7 +276,23 @@ const EditorPage: React.FC = () => {
         canvas.on({
             'object:added': historyCallback,
             'object:removed': historyCallback,
-            'object:modified': historyCallback,
+            'object:modified': (e: any) => {
+                const target = e.target;
+                // When a textbox is scaled, we update its font size and width properties
+                // and reset its scale to 1. This provides a more intuitive experience
+                // where the font size in the toolbar always reflects the visual size.
+                if (target && target.isType('textbox') && (target.scaleX !== 1 || target.scaleY !== 1)) {
+                    const newFontSize = (target.fontSize || 1) * (target.scaleY || 1);
+                    const newWidth = (target.width || 1) * (target.scaleX || 1);
+                    target.set({
+                        fontSize: newFontSize,
+                        width: newWidth,
+                        scaleX: 1,
+                        scaleY: 1
+                    });
+                }
+                historyCallback();
+            },
             'text:changed': historyCallback,
             'selection:created': updateCallback,
             'selection:updated': updateCallback,
@@ -377,18 +402,10 @@ const EditorPage: React.FC = () => {
             originX: 'center',
             originY: 'center',
             data: { userAdded: true, type: obj.type, curve: 0 },
-            borderColor: '#6366f1',
-            cornerColor: '#6366f1',
-            cornerStyle: 'circle',
-            transparentCorners: false,
             shadow: new window.fabric.Shadow(materialStyle.shadow),
             opacity: materialStyle.objectOpacity,
         });
 
-        if (obj.isType('textbox')) {
-            obj.setControlsVisibility({ mt: false, mb: false, ml: false, mr: false });
-        }
-        
         const maxDim = Math.min(zone.width, zone.height) * 0.8;
         if (obj.width > maxDim || obj.height > maxDim) {
             obj.scaleToWidth(maxDim);
@@ -401,9 +418,9 @@ const EditorPage: React.FC = () => {
 
     const addText = () => {
         const text = new window.fabric.Textbox('Your Text', {
-            fontFamily: 'Lato',
-            fontSize: 40,
-            width: 250,
+            fontFamily: 'Playfair Display',
+            fontSize: 80,
+            width: 450,
         });
         addObjectToCanvas(text);
     };
