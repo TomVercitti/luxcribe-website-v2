@@ -34,6 +34,7 @@ export interface PriceDetails {
   text: number;
   images: number;
   total: number;
+  characterCount: number;
 }
 
 // Local representation of an item to be added to the cart

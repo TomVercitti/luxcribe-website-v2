@@ -36,11 +36,11 @@ const ProductDetailPage: React.FC = () => {
 
     setIsAddingToCart(true);
     try {
-        await addToCart({
+        await addToCart([{
             merchandiseId: selectedVariation.variantId,
             quantity: 1,
             attributes: [], // No customization
-        });
+        }]);
         // Cart sidebar will open from context
     } catch (error) {
         console.error("Failed to add to cart:", error);

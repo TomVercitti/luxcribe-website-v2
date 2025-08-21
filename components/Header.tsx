@@ -21,19 +21,19 @@ const Header: React.FC = () => {
   return (
     <header className="bg-black bg-opacity-50 backdrop-blur-sm shadow-lg py-2 w-full z-40 sticky top-0">
       <nav className="container mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-20">
+        <div className="flex items-center justify-between h-32 md:h-40">
           <div className="flex items-center">
             <Link to="/" className="flex-shrink-0">
               <img 
-                className="h-12 md:h-16 w-auto object-contain" 
+                className="h-24 md:h-32 w-auto object-contain" 
                 src="https://raw.githubusercontent.com/TomVercitti/luxcribe-website/main/64_White%20Black%20Modern%20Initial%20Logo-Transparent.png" 
                 alt="Luxcribe Logo" 
               />
             </Link>
           </div>
-          <div className="hidden md:flex md:items-center md:space-x-8">
+          <div className="hidden md:flex md:items-center md:space-x-12">
             {navLinks.map(link => (
-              <NavLink key={link.to} to={link.to} className={linkClasses}>
+              <NavLink key={link.to} to={link.to} className={({isActive}) => `${linkClasses({isActive})} text-lg`}>
                 {link.text}
               </NavLink>
             ))}
@@ -63,7 +63,12 @@ const Header: React.FC = () => {
         <div className="md:hidden bg-gray-900 bg-opacity-90">
           <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3 flex flex-col items-center">
             {navLinks.map(link => (
-              <NavLink key={link.to} to={link.to} className={`${linkClasses} block px-3 py-2 rounded-md text-base font-medium`} onClick={() => setIsMenuOpen(false)}>
+              <NavLink 
+                key={link.to} 
+                to={link.to} 
+                className={({isActive}) => `${linkClasses({isActive})} block px-3 py-2 rounded-md text-base font-medium`} 
+                onClick={() => setIsMenuOpen(false)}
+              >
                 {link.text}
               </NavLink>
             ))}

@@ -10,7 +10,7 @@ interface CartContextType {
   isLoading: boolean;
   notification: string | null;
   initializationError: string | null;
-  addToCart: (item: CartItem) => Promise<void>;
+  addToCart: (items: CartItem[]) => Promise<void>;
   removeFromCart: (lineItemId: string) => Promise<void>;
   toggleCart: () => void;
   clearNotification: () => void;
@@ -66,7 +66,7 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     initializeCart();
   }, []);
 
-  const addToCart = async (item: CartItem) => {
+  const addToCart = async (items: CartItem[]) => {
     if (!cart?.id) {
         const err = "Cart not available. This might be due to a connection issue.";
         console.error(err);
@@ -74,7 +74,7 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
     setIsLoading(true);
     try {
-        const newCart = await addLinesToCart(cart.id, [item]);
+        const newCart = await addLinesToCart(cart.id, items);
         if (newCart) {
             setCart(newCart);
             setNotification('Item successfully added to cart!');
@@ -89,19 +89,56 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   const removeFromCart = async (lineItemId: string) => {
     if (!cart?.id) {
-        console.error("Cart not available");
-        return;
+      console.error("Cart not available");
+      return;
     }
     setIsLoading(true);
+
     try {
-        const newCart = await removeLinesFromCart(cart.id, [lineItemId]);
-        if (newCart) {
-            setCart(newCart);
-        }
-    } catch (error) {
-        console.error("Error removing from cart:", error);
-    } finally {
+      const allLines = cart.lines.edges.map(edge => edge.node);
+      const lineToRemove = allLines.find(line => line.id === lineItemId);
+
+      if (!lineToRemove) {
+        console.warn("Line to remove not found in cart.");
         setIsLoading(false);
+        return;
+      }
+
+      const lineIdsToRemove: string[] = [lineItemId];
+
+      // Check if the removed item is the main customized product
+      const isParentAttribute = lineToRemove.attributes.find(
+        attr => attr.key === '_isCustomizedParent' && attr.value === 'true'
+      );
+      
+      if (isParentAttribute) {
+        const bundleIdAttribute = lineToRemove.attributes.find(attr => attr.key === '_customizationBundleId');
+        const bundleId = bundleIdAttribute?.value;
+
+        if (bundleId) {
+          // Find all associated fee lines with the same bundle ID
+          allLines.forEach(line => {
+            // Make sure we don't re-add the parent
+            if (line.id !== lineItemId) {
+              const lineBundleAttr = line.attributes.find(
+                attr => attr.key === '_customizationBundleId' && attr.value === bundleId
+              );
+              if (lineBundleAttr) {
+                lineIdsToRemove.push(line.id);
+              }
+            }
+          });
+        }
+      }
+      
+      const newCart = await removeLinesFromCart(cart.id, lineIdsToRemove);
+      if (newCart) {
+        setCart(newCart);
+      }
+    } catch (error) {
+      console.error("Error removing from cart:", error);
+    } finally {
+      setIsLoading(false);
     }
   };
 

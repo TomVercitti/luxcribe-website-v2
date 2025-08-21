@@ -1,8 +1,8 @@
 import React, { useEffect, useRef, useState, useMemo, useCallback } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { productCatalog } from '../constants';
+import { productCatalog, IMAGE_FEE_PRODUCT_VARIANT_ID, TEXT_ENGRAVING_TIERS } from '../constants';
 import { useCart } from '../context/CartContext';
-import type { PriceDetails, EngravingZone } from '../types';
+import type { PriceDetails, EngravingZone, CartItem } from '../types';
 import { getStyleForMaterial } from '../styles/materialStyles';
 
 // Import new and existing components
@@ -11,7 +11,8 @@ import PricingBreakdown from '../components/PricingBreakdown';
 import LayersPanel from '../components/LayersPanel';
 import Notification from '../components/Notification';
 import ZoneSelector from '../components/ZoneSelector';
-import { CartIcon, CloseIcon, InfoIcon } from '../components/icons';
+import { CartIcon, CloseIcon, InfoIcon, Spinner } from '../components/icons';
+import CartNotification from '../components/CartNotification';
 
 type CanvasState = {
     json: string | null;
@@ -33,17 +34,18 @@ const isPlaceholderVariantId = (variantId: string): boolean => {
 const EditorPage: React.FC = () => {
     const { productId, variationId, zoneId } = useParams();
     const navigate = useNavigate();
-    const { addToCart, initializationError } = useCart();
+    const { addToCart, initializationError, toggleCart, cartCount } = useCart();
     
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const fabricRef = useRef<any>(null);
     const editorContainerRef = useRef<HTMLDivElement>(null);
     
-    const [priceDetails, setPriceDetails] = useState<PriceDetails>({ base: 0, text: 0, images: 0, total: 0 });
+    const [priceDetails, setPriceDetails] = useState<PriceDetails>({ base: 0, text: 0, images: 0, total: 0, characterCount: 0 });
     const [layers, setLayers] = useState<any[]>([]);
     const [activeObject, setActiveObject] = useState<any>(null);
     const [notification, setNotification] = useState<string | null>(null);
     const [isDisclaimerVisible, setIsDisclaimerVisible] = useState(true);
+    const [isPricingImage, setIsPricingImage] = useState(false);
     
     const [zoneStates, setZoneStates] = useState<{ [key: string]: CanvasState }>({});
     const [activeZoneId, setActiveZoneId] = useState<string | null>(zoneId || null);
@@ -61,12 +63,15 @@ const EditorPage: React.FC = () => {
         return { product, variation, initialZone };
     }, [productId, variationId, zoneId]);
     
-    const isNotConfigured = useMemo(() => 
-      productData ? isPlaceholderVariantId(productData.variation.variantId) : false,
-      [productData]
-    );
+    const isNotConfigured = useMemo(() => {
+      if (!productData) return false;
+      // Check the main product, all text tiers, and the image fee product for placeholder IDs.
+      return isPlaceholderVariantId(productData.variation.variantId) ||
+             TEXT_ENGRAVING_TIERS.some(tier => isPlaceholderVariantId(tier.variantId)) ||
+             isPlaceholderVariantId(IMAGE_FEE_PRODUCT_VARIANT_ID);
+    }, [productData]);
 
-    const isCtaDisabled = isNotConfigured || !!initializationError;
+    const isCtaDisabled = isNotConfigured || !!initializationError || isPricingImage;
 
     const materialStyle = useMemo(() => 
         getStyleForMaterial(window.fabric, productData?.variation.material || 'default'),
@@ -78,7 +83,7 @@ const EditorPage: React.FC = () => {
         [productData, activeZoneId]
     );
 
-    // Effect to initialize zone states when product loads
+    // Effect to initialize zone states and initial price when product loads
     useEffect(() => {
         if (productData) {
             const initialStates: { [key: string]: CanvasState } = {};
@@ -87,6 +92,10 @@ const EditorPage: React.FC = () => {
             });
             setZoneStates(initialStates);
             setActiveZoneId(productData.initialZone.id);
+            
+            // Set the initial price as soon as product data is available
+            const base = productData.product.basePrice;
+            setPriceDetails({ base, text: 0, images: 0, total: base, characterCount: 0 });
         }
     }, [productData]);
     
@@ -117,39 +126,61 @@ const EditorPage: React.FC = () => {
 
     const updateLayersAndPrice = useCallback(() => {
         if (!fabricRef.current || !productData) return;
-        const canvas = fabricRef.current;
 
-        const userObjects = canvas.getObjects().filter((obj: any) => obj.data?.userAdded).reverse();
+        const currentCanvas = fabricRef.current;
+        const userObjects = currentCanvas.getObjects().filter((obj: any) => obj.data?.userAdded).reverse();
         setLayers(userObjects);
+
+        const updatedZoneStates = { ...zoneStates };
+        if (activeZoneId && fabricRef.current) {
+            const json = JSON.stringify(fabricRef.current.toJSON(['data']));
+            updatedZoneStates[activeZoneId] = { ...updatedZoneStates[activeZoneId], json };
+        }
         
-        // Calculate price across ALL zones
-        let totalTextCost = 0;
-        let totalImageCost = 0;
-        const PRICE_PER_CHARACTER = 0.10;
-        const PRICE_PER_IMAGE = 3.00;
-        
-        Object.values(zoneStates).forEach(state => {
-             if (state.json) {
-                const tempCanvas = new window.fabric.StaticCanvas(null);
-                tempCanvas.loadFromJSON(state.json, () => {
-                     tempCanvas.getObjects().forEach((obj: any) => {
-                        if (obj.data?.userAdded) {
-                           if (obj.isType('textbox')) {
-                                totalTextCost += (obj.text?.length || 0) * PRICE_PER_CHARACTER;
-                            } else if (obj.isType('image') || obj.isType('group')) {
-                                totalImageCost += PRICE_PER_IMAGE;
+        // Calculate price across ALL zones based on character count and image presence
+        let totalCharacterCount = 0;
+        let totalImageFee = 0;
+
+        Object.values(updatedZoneStates).forEach(state => {
+            if (state.json) {
+                try {
+                    const canvasData = JSON.parse(state.json);
+                    if (canvasData && canvasData.objects) {
+                        for (const obj of canvasData.objects) {
+                            if (obj.data?.userAdded) {
+                                if (obj.type === 'textbox' && obj.text?.length > 0) {
+                                    totalCharacterCount += obj.text.length;
+                                } else if ((obj.type === 'image' || obj.type === 'group') && obj.data?.price) {
+                                    totalImageFee += obj.data.price;
+                                }
                             }
                         }
-                    });
-                });
+                    }
+                } catch (e) {
+                    console.error("Error parsing zone state for pricing:", e);
+                }
             }
         });
+        
+        let textFee = 0;
+        if (totalCharacterCount > 0) {
+            const tier = TEXT_ENGRAVING_TIERS.find(t => totalCharacterCount >= t.min && totalCharacterCount <= t.max);
+            if (tier) {
+                textFee = tier.price;
+            } else {
+                // If over max, show price for max tier but will be blocked at checkout
+                const maxTier = TEXT_ENGRAVING_TIERS[TEXT_ENGRAVING_TIERS.length - 1];
+                 if (totalCharacterCount > maxTier.max) {
+                    textFee = maxTier.price;
+                }
+            }
+        }
 
         const base = productData.product.basePrice;
-        const total = base + totalTextCost + totalImageCost;
-        setPriceDetails({ base, text: totalTextCost, images: totalImageCost, total });
+        const total = base + textFee + totalImageFee;
+        setPriceDetails({ base, text: textFee, images: totalImageFee, total, characterCount: totalCharacterCount });
         
-    }, [productData, zoneStates]);
+    }, [productData, zoneStates, activeZoneId]);
 
     const loadZone = useCallback((zone: EngravingZone) => {
         if (!fabricRef.current || !zoneStates[zone.id]) return;
@@ -401,10 +432,12 @@ const EditorPage: React.FC = () => {
             top: zone.y + zone.height / 2,
             originX: 'center',
             originY: 'center',
-            data: { userAdded: true, type: obj.type, curve: 0 },
             shadow: new window.fabric.Shadow(materialStyle.shadow),
             opacity: materialStyle.objectOpacity,
         });
+
+        const existingData = obj.data || {};
+        obj.set('data', { ...existingData, userAdded: true });
 
         const maxDim = Math.min(zone.width, zone.height) * 0.8;
         if (obj.width > maxDim || obj.height > maxDim) {
@@ -415,12 +448,59 @@ const EditorPage: React.FC = () => {
         canvas.setActiveObject(obj);
         canvas.renderAll();
     };
+    
+    const priceAndAddImage = async (imageData: string, type: 'svg' | 'png') => {
+        setIsPricingImage(true);
+        showNotification("Calculating engraving price for image...");
+        try {
+            const response = await fetch('/.netlify/functions/image-pricing', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ imageData }),
+            });
+
+            if (!response.ok) {
+                throw new Error('Failed to get pricing from server.');
+            }
+
+            const { price } = await response.json();
+
+            const createObject = (callback: (obj: any) => void) => {
+                if (type === 'svg') {
+                    window.fabric.loadSVGFromString(imageData, (objects: any[], options: any) => {
+                        const obj = window.fabric.util.groupSVGElements(objects, options);
+                        callback(obj);
+                    });
+                } else {
+                    window.fabric.Image.fromURL(imageData, (img: any) => {
+                        img.filters = [...materialStyle.imageFilters];
+                        img.applyFilters();
+                        callback(img);
+                    });
+                }
+            };
+            
+            createObject((fabricObject: any) => {
+                fabricObject.set('data', { userAdded: true, type: fabricObject.type, price: price });
+                addObjectToCanvas(fabricObject);
+                showNotification(`Image added! Engraving fee: $${price.toFixed(2)}`);
+            });
+
+        } catch (error) {
+            console.error("Image pricing error:", error);
+            showNotification("Error: Could not calculate image price. Please try again.");
+        } finally {
+            setIsPricingImage(false);
+        }
+    };
+
 
     const addText = () => {
         const text = new window.fabric.Textbox('Your Text', {
             fontFamily: 'Playfair Display',
-            fontSize: 80,
+            fontSize: 160,
             width: 450,
+            data: { userAdded: true, type: 'textbox' }
         });
         addObjectToCanvas(text);
     };
@@ -453,7 +533,9 @@ const EditorPage: React.FC = () => {
 
     const handleTextCurveChange = (curve: number) => {
         if (activeObject?.isType('textbox')) {
-            activeObject.data.curve = curve;
+            const data = activeObject.data || {};
+            activeObject.data = {...data, curve: curve};
+            
             if (curve === 0) {
                 activeObject.set('path', null);
             } else {
@@ -540,22 +622,11 @@ const EditorPage: React.FC = () => {
             return;
         }
 
-        // If all checks pass (or are just warnings), proceed with adding to canvas
+        // If all checks pass (or are just warnings), proceed with pricing and adding to canvas
         const reader = new FileReader();
         reader.onload = (f) => {
             const data = f.target?.result as string;
-            if (file.type === 'image/svg+xml') {
-                window.fabric.loadSVGFromString(data, (objects: any[], options: any) => {
-                    const obj = window.fabric.util.groupSVGElements(objects, options);
-                    addObjectToCanvas(obj);
-                });
-            } else {
-                window.fabric.Image.fromURL(data, (img: any) => {
-                    img.filters = [...materialStyle.imageFilters];
-                    img.applyFilters();
-                    addObjectToCanvas(img);
-                });
-            }
+            priceAndAddImage(data, file.type === 'image/svg+xml' ? 'svg' : 'png');
         };
 
         if (file.type === 'image/svg+xml') {
@@ -569,10 +640,7 @@ const EditorPage: React.FC = () => {
 
 
     const addFromLibrary = (svgString: string) => {
-        window.fabric.loadSVGFromString(svgString, (objects: any[], options: any) => {
-            const obj = window.fabric.util.groupSVGElements(objects, options);
-            addObjectToCanvas(obj);
-        });
+        priceAndAddImage(svgString, 'svg');
     }
 
     const deleteLayer = (layer: any) => {
@@ -589,54 +657,98 @@ const EditorPage: React.FC = () => {
     const handleAddToCart = async () => {
         if (!productData || isCtaDisabled) return;
 
+        // First, ensure the current zone's state is saved before calculation
         const updatedZoneStates = { ...zoneStates };
         if (activeZoneId && fabricRef.current) {
             const json = JSON.stringify(fabricRef.current.toJSON(['data']));
             updatedZoneStates[activeZoneId] = { ...updatedZoneStates[activeZoneId], json };
         }
 
-        const customizedZones = productData.variation.engravingZones.filter(zone => {
-            const zoneState = updatedZoneStates[zone.id];
-            if (!zoneState || !zoneState.json) return false;
-            try {
-                const parsed = JSON.parse(zoneState.json);
-                return parsed.objects.some((obj: any) => obj.data?.userAdded);
-            } catch (e) {
-                console.error("Error parsing zone JSON", e);
-                return false;
+        let totalCharacterCount = 0;
+        let totalImageFee = 0;
+        const allText: string[] = [];
+
+        // Loop through all zones to check for customizations
+        Object.values(updatedZoneStates).forEach(state => {
+            if (state.json) {
+                try {
+                    const parsed = JSON.parse(state.json);
+                    parsed.objects.forEach((obj: any) => {
+                        if (obj.data?.userAdded) {
+                            if (obj.type === 'textbox' && obj.text) {
+                                totalCharacterCount += obj.text.length;
+                                allText.push(obj.text);
+                            } else if ((obj.type === 'image' || obj.type === 'group') && obj.data?.price) {
+                                totalImageFee += obj.data.price;
+                            }
+                        }
+                    });
+                } catch (e) {
+                    console.error('Error processing zone JSON for fee calculation', e);
+                }
             }
         });
 
-        if (customizedZones.length === 0) {
+        if (totalCharacterCount === 0 && totalImageFee === 0) {
             showNotification("Please add a design to at least one zone before adding to cart.");
             return;
         }
-
-        const attributes = [
-            { key: "_customizationImage", value: productData.variation.mockupImage },
-            { key: "_customizedZones", value: customizedZones.map(z => z.name).join(', ') },
-            { key: "Base Price", value: `$${priceDetails.base.toFixed(2)}`},
-            { key: "Customization Cost", value: `$${(priceDetails.text + priceDetails.images).toFixed(2)}`},
-            { key: "Total Price", value: `$${priceDetails.total.toFixed(2)}`},
-        ];
         
-        customizedZones.forEach(zone => {
-            const zoneState = updatedZoneStates[zone.id];
-            const key = `_Design: ${zone.name}`;
-            if (zoneState.json && zoneState.json.length < 2048) {
-                attributes.push({ key, value: zoneState.json });
-            } else if (zoneState.json) {
-                console.warn(`Design for zone '${zone.name}' is too large to save.`);
-                attributes.push({ key, value: 'Design data too large to be saved.' });
-            }
+        const maxTier = TEXT_ENGRAVING_TIERS[TEXT_ENGRAVING_TIERS.length - 1];
+        if (totalCharacterCount > maxTier.max) {
+             showNotification(`Error: Character count of ${totalCharacterCount} exceeds the maximum of ${maxTier.max}.`);
+             return;
+        }
+
+        const linesToAdd: CartItem[] = [];
+        const uniqueBundleId = `luxcribe-${Date.now()}`;
+
+        // 1. Add the base product
+        linesToAdd.push({
+            merchandiseId: productData.variation.variantId,
+            quantity: 1,
+            attributes: [
+                { key: "_customizationImage", value: productData.variation.mockupImage },
+                { key: "Total Price", value: `$${priceDetails.total.toFixed(2)}`},
+                { key: "_Design: Main", value: JSON.stringify(updatedZoneStates[productData.initialZone.id]?.json || '{}') }, // Save at least one zone's design
+                { key: "_customizationBundleId", value: uniqueBundleId },
+                { key: "_isCustomizedParent", value: "true" }
+            ]
         });
 
-        try {
-            await addToCart({
-                merchandiseId: productData.variation.variantId,
+        // 2. Add the correct text fee variant based on character count
+        if (totalCharacterCount > 0) {
+            const tier = TEXT_ENGRAVING_TIERS.find(t => totalCharacterCount >= t.min && totalCharacterCount <= t.max);
+            if(tier) {
+                linesToAdd.push({
+                    merchandiseId: tier.variantId,
+                    quantity: 1,
+                    attributes: [
+                        { key: "Engraving Type", value: "Text Customization" },
+                        { key: "Character Count", value: totalCharacterCount.toString() },
+                        { key: "Engraved Text", value: allText.join(' | ').substring(0, 1024) },
+                        { key: "_customizationBundleId", value: uniqueBundleId }
+                    ]
+                });
+            }
+        }
+        
+        // 3. Add the image fee product if applicable
+        if (totalImageFee > 0) {
+            linesToAdd.push({
+                merchandiseId: IMAGE_FEE_PRODUCT_VARIANT_ID,
                 quantity: 1,
-                attributes: attributes,
+                attributes: [
+                    { key: "Engraving Type", value: "Image/Logo Customization" },
+                    { key: "Calculated Fee", value: `$${totalImageFee.toFixed(2)}`},
+                    { key: "_customizationBundleId", value: uniqueBundleId }
+                ]
             });
+        }
+
+        try {
+            await addToCart(linesToAdd);
+            console.log('Successfully added customized item and fees to cart:', linesToAdd);
         } catch (error: any) {
             console.error("Failed to add to cart:", error);
             const friendlyMessage = (error.message || '').replace('Shopify Error: ', '');
@@ -651,6 +763,7 @@ const EditorPage: React.FC = () => {
 
     return (
         <div className="flex flex-col lg:flex-row h-screen bg-gray-900 text-white overflow-hidden">
+            <CartNotification />
             {/* Main Editor Content */}
             <div className="flex-1 flex flex-col min-w-0">
                 <div className="flex-shrink-0 relative z-10">
@@ -695,7 +808,21 @@ const EditorPage: React.FC = () => {
             {/* Sidebar */}
             <aside className="w-full lg:w-96 bg-gray-800 p-6 flex-shrink-0 flex flex-col justify-between overflow-y-auto">
                 <div>
-                  <h2 className="text-2xl font-playfair border-b border-gray-700 pb-3 mb-6">Design Details</h2>
+                  <div className="flex justify-between items-center border-b border-gray-700 pb-3 mb-6">
+                    <h2 className="text-2xl font-playfair">Design Details</h2>
+                     <button
+                        onClick={toggleCart}
+                        className="relative text-gray-300 hover:text-indigo-400 transition-colors"
+                        aria-label="Open shopping cart"
+                    >
+                        <CartIcon />
+                        {cartCount > 0 && (
+                            <span className="absolute -top-2 -right-2 w-5 h-5 bg-red-500 text-white text-xs rounded-full flex items-center justify-center">
+                            {cartCount}
+                            </span>
+                        )}
+                    </button>
+                  </div>
                   
                   {productData.variation.engravingZones.length > 1 && (
                       <ZoneSelector 
@@ -703,6 +830,13 @@ const EditorPage: React.FC = () => {
                           activeZoneId={activeZoneId}
                           onSelectZone={handleSelectZone}
                       />
+                  )}
+                  
+                  {isPricingImage && (
+                    <div className="mb-4 p-3 bg-indigo-900/50 rounded-lg flex items-center justify-center text-indigo-300">
+                        <Spinner className="w-5 h-5 mr-3"/>
+                        <span>Calculating image price...</span>
+                    </div>
                   )}
 
                   <LayersPanel layers={layers} onSelectLayer={selectLayer} onDeleteLayer={deleteLayer} activeObject={activeObject} />
@@ -728,7 +862,7 @@ const EditorPage: React.FC = () => {
                           <svg className="w-5 h-5 mr-2 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.21 3.03-1.742 3.03H4.42c-1.532 0-2.492-1.696-1.742-3.03l5.58-9.92zM10 13a1 1 0 110-2 1 1 0 010 2zm-1-8a1 1 0 011-1h.01a1 1 0 110 2H10a1 1 0 01-1-1z" clipRule="evenodd"></path></svg>
                           Configuration Needed
                         </p>
-                        <p className="mt-1">This product uses a placeholder ID. Please update the <code className="bg-gray-700 p-1 rounded text-xs">variantId</code> in <code className="bg-gray-700 p-1 rounded text-xs">constants.ts</code> to enable "Add to Cart".</p>
+                        <p className="mt-1">This feature requires configuration. Please ensure the main product variant ID and the new fee product variant IDs in <code className="bg-gray-700 p-1 rounded text-xs">constants.ts</code> are updated with real values from your Shopify store.</p>
                     </div>
                   )}
                 </div>
@@ -739,8 +873,8 @@ const EditorPage: React.FC = () => {
                         className="w-full p-3 rounded-lg text-lg font-bold flex items-center justify-center gap-2 transition-colors disabled:bg-gray-600 disabled:text-gray-400 disabled:cursor-not-allowed bg-indigo-600 hover:bg-indigo-700"
                         disabled={isCtaDisabled}
                     >
-                        <CartIcon className="w-6 h-6"/>
-                        Add to Cart
+                        {isPricingImage ? <Spinner className="w-6 h-6"/> : <CartIcon className="w-6 h-6"/>}
+                        {isPricingImage ? 'Pricing Image...' : 'Add to Cart'}
                     </button>
                  </div>
             </aside>

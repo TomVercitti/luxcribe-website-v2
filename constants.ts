@@ -3,8 +3,13 @@ import type { Product, PageContent } from './types';
 // NOTE: The 'bounds' for engraving zones are based on a canvas size of roughly 800x600.
 // These values define the rectangular area where users can add their designs.
 
-export const PRICE_PER_CHARACTER = 0.10; // $0.10 per character
-export const PRICE_PER_IMAGE = 3.00;     // $3.00 per uploaded/AI/library image
+export const TEXT_ENGRAVING_TIERS = [
+  { min: 1, max: 5, price: 25.00, variantId: 'gid://shopify/ProductVariant/46968651546869' },
+  { min: 6, max: 10, price: 30.00, variantId: 'gid://shopify/ProductVariant/46968711971061' },
+  { min: 11, max: 20, price: 40.00, variantId: 'gid://shopify/ProductVariant/46968707907829' },
+  { min: 21, max: 30, price: 50.00, variantId: 'gid://shopify/ProductVariant/46968712954101' },
+  { min: 31, max: 50, price: 60.00, variantId: 'gid://shopify/ProductVariant/46968714100981' },
+];
 
 export const ENGRAVING_COLORS = [
   { name: 'Deep Black', hex: '#212121' },
@@ -100,8 +105,26 @@ export const DESIGN_LIBRARY_ITEMS = [
 //
 // ===================================================================================
 
+// ===================================================================================
+// !! ACTION REQUIRED FOR ENGRAVING FEES !!
+// ===================================================================================
+// To enable adding engraving fees to the cart, you must:
+// 1. Create a product in your Shopify store to represent the engraving fee tiers.
+//    This product should have variants corresponding to each tier in `TEXT_ENGRAVING_TIERS`.
+//    - Example Variant Name: "Text Engraving (1-5 Characters)", Price: $25.00
+//    - Example Variant Name: "Text Engraving (6-10 Characters)", Price: $30.00
+// 2. Create a separate product for "Image Engraving Fee". This product's price in Shopify
+//    will be overridden by the dynamically calculated price, so you can set it to $0 or a base fee.
+// 3. Get the Variant GID for each of these new variants/products.
+// 4. Replace the placeholder GIDs in `TEXT_ENGRAVING_TIERS` and `IMAGE_FEE_PRODUCT_VARIANT_ID`.
+// ===================================================================================
+
+export const IMAGE_FEE_PRODUCT_VARIANT_ID = 'gid://shopify/ProductVariant/46968633426165';
+
+
 export const productCatalog: { [key: string]: Product } = {
   // Drinkware & Barware
+  /*
   'tumbler': {
     id: 'tumbler',
     name: '20oz Insulated Tumbler',
@@ -114,6 +137,7 @@ export const productCatalog: { [key: string]: Product } = {
       { id: 'tumbler-blue', name: 'Navy Blue', colorHex: '#0d2d4e', material: 'metal', mockupImage: 'https://storage.googleapis.com/gemini-ui-params/56b7c0d2-0158-45b7-a3f1-d10100414605.png', variantId: 'gid://shopify/ProductVariant/46958815445237', engravingZones: [{id: 'front', name: 'Front', bounds: { x: 250, y: 150, width: 300, height: 300 }}] },
     ],
   },
+  */
   /*
   'whiskey-glass': {
     id: 'whiskey-glass',
