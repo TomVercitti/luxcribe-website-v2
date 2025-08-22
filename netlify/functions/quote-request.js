@@ -1,6 +1,6 @@
-import fetch from 'node-fetch';
+// No import needed, we will use the native fetch API provided by the Netlify environment.
 
-export async function handler(event, context) {
+exports.handler = async function(event, context) {
   if (event.httpMethod !== 'POST') {
     return { statusCode: 405, body: JSON.stringify({ message: 'Method Not Allowed' }) };
   }
