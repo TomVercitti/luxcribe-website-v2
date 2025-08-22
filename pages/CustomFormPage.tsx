@@ -13,6 +13,7 @@ const CustomFormPage: React.FC = () => {
   const [isGuideModalOpen, setIsGuideModalOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [submissionStatus, setSubmissionStatus] = useState<'idle' | 'submitting' | 'success' | 'error'>('idle');
+  const [errorMessage, setErrorMessage] = useState<string>('There was an error submitting your request. Please try again.');
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -37,14 +38,22 @@ const CustomFormPage: React.FC = () => {
     e.preventDefault();
     setSubmissionStatus('submitting');
 
-    const form = e.currentTarget;
-    const formDataForSubmission = new FormData(form);
+    const payload = {
+      ...formData,
+      fileName: fileName || '',
+    };
 
-    fetch('/', {
+    fetch('/.netlify/functions/quote-request', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: new URLSearchParams(formDataForSubmission as any).toString(),
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
     })
+      .then(response => {
+        if (!response.ok) {
+          return response.json().then(err => { throw new Error(err.message || 'An unknown server error occurred.') });
+        }
+        return response.json();
+      })
       .then(() => {
         setSubmissionStatus('success');
         setFormData({
@@ -61,6 +70,7 @@ const CustomFormPage: React.FC = () => {
       })
       .catch((error) => {
         console.error('Form submission error:', error);
+        setErrorMessage(error.message || 'There was an error submitting your request. Please try again.');
         setSubmissionStatus('error');
       });
   };
@@ -89,19 +99,9 @@ const CustomFormPage: React.FC = () => {
         ) : (
           <form 
             name="quote-request" 
-            method="POST" 
-            data-netlify="true"
-            data-netlify-honeypot="bot-field" 
             className="space-y-6"
             onSubmit={handleSubmit}
-            action="/?success=true" // For non-JS fallback and better bot detection
           >
-            {/* hidden input for Netlify */}
-            <input type="hidden" name="form-name" value="quote-request" />
-            <p className="hidden">
-              <label>Don’t fill this out: <input name="bot-field" /></label>
-            </p>
-
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
               <div>
                 <label htmlFor="name" className="block text-sm font-medium text-gray-300">Full Name</label>
@@ -151,7 +151,7 @@ const CustomFormPage: React.FC = () => {
             </div>
 
             {submissionStatus === 'error' && (
-              <p className="text-red-400 text-center">There was an error submitting your request. Please try again.</p>
+              <p className="text-red-400 text-center">{errorMessage}</p>
             )}
 
             <div>
@@ -164,7 +164,7 @@ const CustomFormPage: React.FC = () => {
               </button>
             </div>
             <p className="text-xs text-gray-500 text-center">
-              The form will submit directly to our team. If you've attached a file, note only the file name is sent.
+              Your request will be sent to our team. Please note that the file itself is not uploaded, only a reference to its name is sent. We may follow up for the design file via email.
             </p>
           </form>
         )}
