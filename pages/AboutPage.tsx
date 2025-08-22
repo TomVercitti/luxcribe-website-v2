@@ -6,16 +6,16 @@ import { SHOPIFY_STORE_DOMAIN, SHOPIFY_STOREFRONT_ACCESS_TOKEN } from '../config
 
 const teamMembers = [
   {
-    name: 'Jane Doe',
+    name: 'Swapnil Poudyal',
     title: 'Founder & Lead Engraver',
-    bio: 'With a decade of experience in craftsmanship and a passion for technology, Jane founded Luxcribe to bring personalized art to everyone.',
-    imageUrl: 'https://storage.googleapis.com/gemini-ui-params/3b67f678-f7b5-4b40-8b1e-42c26f041d8e.png', // Placeholder
+    bio: 'With a decade of experience in craftsmanship and a passion for technology, Swapnil founded Luxcribe to bring personalized art to everyone.',
+    imageUrl: 'https://raw.githubusercontent.com/TomVercitti/luxcribe-website/main/Swapnil%20Poudyal.jfif',
   },
   {
-    name: 'John Smith',
+    name: 'Google AI Studio',
     title: 'AI & Software Architect',
-    bio: 'John is the visionary behind our AI-powered design tools, constantly pushing the boundaries of what\'s possible in digital creation.',
-    imageUrl: 'https://storage.googleapis.com/gemini-ui-params/e232b847-a727-4a4b-9e45-13f83737b833.png', // Placeholder
+    bio: 'Google AI Studio is the visionary technology behind our AI-powered design tools, constantly pushing the boundaries of what\'s possible in digital creation.',
+    imageUrl: 'https://raw.githubusercontent.com/TomVercitti/luxcribe-website/main/google-background.png',
   },
 ];
 
@@ -204,20 +204,53 @@ const AboutPage: React.FC = () => {
       {/* Team Section */}
       <section className="py-16 md:py-24 bg-gray-800">
         <div className="container mx-auto px-4 text-center">
-          <h2 className="text-3xl md:text-4xl font-playfair mb-12">Meet the Team</h2>
-          <div className="grid sm:grid-cols-2 gap-12 max-w-4xl mx-auto">
-            {teamMembers.map((member, index) => (
-              <div key={index} className="flex flex-col items-center">
+          <h2 className="text-3xl md:text-4xl font-playfair mb-12">Our Foundation</h2>
+          <div className="flex flex-col lg:flex-row items-center justify-center gap-8 lg:gap-12 max-w-6xl mx-auto">
+            {/* Founder */}
+            <div className="flex flex-col items-center lg:w-96">
                 <img 
-                  src={member.imageUrl} 
-                  alt={member.name} 
-                  className="w-40 h-40 rounded-full object-cover mb-4 shadow-lg"
+                    src={teamMembers[0].imageUrl} 
+                    alt={teamMembers[0].name} 
+                    className="w-40 h-40 rounded-full object-cover mb-4 shadow-lg"
                 />
-                <h3 className="text-xl font-semibold">{member.name}</h3>
-                <p className="text-indigo-400 font-medium">{member.title}</p>
-                <p className="mt-2 text-gray-400 max-w-xs">{member.bio}</p>
-              </div>
-            ))}
+                <h3 className="text-xl font-semibold">{teamMembers[0].name}</h3>
+                <p className="text-indigo-400 font-medium">{teamMembers[0].title}</p>
+                <p className="mt-2 text-gray-400 max-w-xs">{teamMembers[0].bio}</p>
+            </div>
+
+            {/* Plus Icon */}
+            <div className="hidden lg:block text-6xl font-thin text-indigo-400 mx-4 transform -translate-y-8">
+                +
+            </div>
+
+            {/* AI Architect */}
+            <div className="flex flex-col items-center lg:w-96">
+                <img 
+                    src={teamMembers[1].imageUrl} 
+                    alt={teamMembers[1].name} 
+                    className="w-40 h-40 rounded-full object-cover mb-4 shadow-lg"
+                />
+                <h3 className="text-xl font-semibold">{teamMembers[1].name}</h3>
+                <p className="text-indigo-400 font-medium">{teamMembers[1].title}</p>
+                <p className="mt-2 text-gray-400 max-w-xs">{teamMembers[1].bio}</p>
+            </div>
+            
+            {/* Equals Icon */}
+            <div className="hidden lg:block text-6xl font-thin text-indigo-400 mx-4 transform -translate-y-8">
+                =
+            </div>
+            
+            {/* Luxcribe Logo Result */}
+            <div className="hidden lg:flex flex-col items-center justify-center lg:w-96">
+                <img 
+                    src="https://raw.githubusercontent.com/TomVercitti/luxcribe-website/main/64_White%20Black%20Modern%20Initial%20Logo-Transparent.png" 
+                    alt="Luxcribe Logo" 
+                    className="w-40 h-40 object-contain filter drop-shadow-lg"
+                />
+                <h3 className="text-2xl font-semibold font-playfair mt-2">Luxcribe</h3>
+                <p className="text-indigo-400 font-medium">Your Vision, Crafted</p>
+                <p className="mt-2 text-gray-400 max-w-xs">The result of human creativity powered by artificial intelligence.</p>
+            </div>
           </div>
         </div>
       </section>

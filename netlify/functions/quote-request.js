@@ -1,3 +1,4 @@
+
 import fetch from 'node-fetch';
 
 export async function handler(event, context) {
@@ -24,7 +25,7 @@ export async function handler(event, context) {
     formData.append('utf8', '✓');
     formData.append('contact[tags]', 'custom-quote');
     formData.append('contact[email]', data.email);
-    formData.append('contact[first_name]', data.name);
+    formData.append('contact[name]', data.name); // CORRECTED from contact[first_name]
     formData.append('contact[phone]', data.phone || '');
     formData.append('contact[company]', data.company || '');
     formData.append('contact[body]', `
