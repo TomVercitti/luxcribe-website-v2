@@ -1,6 +1,7 @@
-// No import needed, we will use the native fetch API provided by the Netlify environment.
 
-exports.handler = async function(event, context) {
+import fetch from 'node-fetch';
+
+export async function handler(event, context) {
   if (event.httpMethod !== 'POST') {
     return { statusCode: 405, body: JSON.stringify({ message: 'Method Not Allowed' }) };
   }
@@ -22,25 +23,17 @@ exports.handler = async function(event, context) {
     const formData = new URLSearchParams();
     formData.append('form_type', 'contact');
     formData.append('utf8', '✓');
-    
-    // Add a tag to easily identify these submissions in Shopify
     formData.append('contact[tags]', 'custom-quote');
-    
-    // Use standard Shopify contact form field names for broad compatibility
     formData.append('contact[email]', data.email);
-    formData.append('contact[name]', data.name);
+    formData.append('contact[name]', data.name); // CORRECTED from contact[first_name]
     formData.append('contact[phone]', data.phone || '');
-    
-    // Combine remaining details into the main message body. 'contact[body]' is the standard.
-    const messageBody = `
+    formData.append('contact[company]', data.company || '');
+    formData.append('contact[body]', `
 Project Description:
 ${data.description}
 
----
-Company: ${data.company || 'N/A'}
-${data.fileName ? `File Reference: ${data.fileName}` : 'No file reference provided.'}
-    `;
-    formData.append('contact[body]', messageBody);
+${data.fileName ? `File Reference: ${data.fileName}` : 'No file provided.'}
+    `);
     
     const shopifyContactUrl = `https://${shopifyDomain}/contact`;
 
