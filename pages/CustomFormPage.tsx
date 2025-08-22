@@ -22,11 +22,7 @@ const CustomFormPage: React.FC = () => {
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = e.target.files?.[0];
-    if (selectedFile) {
-      setFileName(selectedFile.name);
-    } else {
-      setFileName(null);
-    }
+    setFileName(selectedFile ? selectedFile.name : null);
   };
 
   const handleProceedToUpload = () => {
@@ -34,45 +30,42 @@ const CustomFormPage: React.FC = () => {
     fileInputRef.current?.click();
   };
 
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setSubmissionStatus('submitting');
 
-    const payload = {
-      ...formData,
-      fileName: fileName || '',
-    };
+    const payload = { ...formData, fileName: fileName || '' };
 
-    fetch('/.netlify/functions/quoteRequest', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload),
-    })
-      .then(response => {
-        if (!response.ok) {
-          return response.json().then(err => { throw new Error(err.message || 'An unknown server error occurred.') });
-        }
-        return response.json();
-      })
-      .then(() => {
-        setSubmissionStatus('success');
-        setFormData({
-          name: '',
-          email: '',
-          phone: '',
-          company: '',
-          description: '',
-        });
-        setFileName(null);
-        if (fileInputRef.current) {
-          fileInputRef.current.value = '';
-        }
-      })
-      .catch((error) => {
-        console.error('Form submission error:', error);
-        setErrorMessage(error.message || 'There was an error submitting your request. Please try again.');
-        setSubmissionStatus('error');
+    try {
+      const response = await fetch('/.netlify/functions/quoteRequest', { // Update URL if function filename is different
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
       });
+
+      // Safe JSON parsing
+      let data;
+      try {
+        data = await response.json();
+      } catch {
+        data = { message: 'Unexpected server response' };
+      }
+
+      if (!response.ok) {
+        throw new Error(data.message || 'An unknown server error occurred.');
+      }
+
+      // Success: reset form
+      setSubmissionStatus('success');
+      setFormData({ name: '', email: '', phone: '', company: '', description: '' });
+      setFileName(null);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+
+    } catch (error: any) {
+      console.error('Form submission error:', error);
+      setErrorMessage(error.message || 'There was an error submitting your request. Please try again.');
+      setSubmissionStatus('error');
+    }
   };
 
   return (
@@ -97,11 +90,7 @@ const CustomFormPage: React.FC = () => {
             </button>
           </div>
         ) : (
-          <form 
-            name="quote-request" 
-            className="space-y-6"
-            onSubmit={handleSubmit}
-          >
+          <form name="quote-request" className="space-y-6" onSubmit={handleSubmit}>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
               <div>
                 <label htmlFor="name" className="block text-sm font-medium text-gray-300">Full Name</label>
@@ -129,18 +118,12 @@ const CustomFormPage: React.FC = () => {
               <div className="mt-1 flex items-center justify-center px-6 pt-5 pb-6 border-2 border-gray-600 border-dashed rounded-md">
                 <div className="space-y-1 text-center">
                   <svg className="mx-auto h-12 w-12 text-gray-500" stroke="currentColor" fill="none" viewBox="0 0 48 48" aria-hidden="true"><path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>
-                  <button
-                    type="button"
-                    onClick={() => setIsGuideModalOpen(true)}
-                    className="font-medium text-indigo-400 hover:text-indigo-300 focus:outline-none"
-                  >
+                  <button type="button" onClick={() => setIsGuideModalOpen(true)} className="font-medium text-indigo-400 hover:text-indigo-300 focus:outline-none">
                     Upload a file
                   </button>
                   <input type="file" name="file" ref={fileInputRef} onChange={handleFileChange} className="hidden" accept=".png,.svg" />
                   <p className="text-xs text-gray-500">PNG or SVG up to 5MB</p>
-                  {fileName && (
-                    <p className="text-sm text-green-400 mt-2">Selected: {fileName}</p>
-                  )}
+                  {fileName && <p className="text-sm text-green-400 mt-2">Selected: {fileName}</p>}
                 </div>
               </div>
             </div>
@@ -150,16 +133,10 @@ const CustomFormPage: React.FC = () => {
               <textarea name="description" id="description" rows={6} required value={formData.description} onChange={handleChange} className="mt-1 block w-full bg-gray-700 border-gray-600 rounded-md p-3 text-white focus:ring-indigo-500 focus:border-indigo-500" placeholder="Please describe your project, including materials, dimensions, and any other relevant details."></textarea>
             </div>
 
-            {submissionStatus === 'error' && (
-              <p className="text-red-400 text-center">{errorMessage}</p>
-            )}
+            {submissionStatus === 'error' && <p className="text-red-400 text-center">{errorMessage}</p>}
 
             <div>
-              <button 
-                type="submit" 
-                className="w-full flex justify-center py-3 px-4 border border-transparent rounded-md shadow-sm text-lg font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-900 focus:ring-indigo-500 disabled:bg-gray-500 disabled:cursor-wait"
-                disabled={submissionStatus === 'submitting'}
-              >
+              <button type="submit" className="w-full flex justify-center py-3 px-4 border border-transparent rounded-md shadow-sm text-lg font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-900 focus:ring-indigo-500 disabled:bg-gray-500 disabled:cursor-wait" disabled={submissionStatus === 'submitting'}>
                 {submissionStatus === 'submitting' ? 'Sending...' : 'Send Quote Request'}
               </button>
             </div>
@@ -170,11 +147,7 @@ const CustomFormPage: React.FC = () => {
         )}
       </div>
 
-      <UploadGuideModal 
-        isOpen={isGuideModalOpen} 
-        onClose={() => setIsGuideModalOpen(false)} 
-        onProceed={handleProceedToUpload} 
-      />
+      <UploadGuideModal isOpen={isGuideModalOpen} onClose={() => setIsGuideModalOpen(false)} onProceed={handleProceedToUpload} />
     </div>
   );
 };
