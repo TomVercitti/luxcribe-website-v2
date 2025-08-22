@@ -84,6 +84,28 @@ export const DESIGN_LIBRARY_ITEMS = [
   },
 ];
 
+export const customerGalleryItems = [
+  {
+    imageUrl: 'https://cdn.shopify.com/s/files/1/0762/2433/2021/files/slate-coaster-square.png?v=1755435099',
+    customerName: 'Jessica L.',
+    reviewText: 'The custom slate coasters for our anniversary were perfect. The design process was so easy and they look fantastic!',
+    productName: 'Slate Coasters',
+  },
+  {
+    imageUrl: 'https://cdn.shopify.com/s/files/1/0762/2433/2021/files/Saccd85451d5a4e13a3c08b983eb1e92e6.webp?v=1755435098',
+    customerName: 'Mark T.',
+    reviewText: 'I ordered a personalized leather key organizer for my husband and he loves it. The engraving quality is top-notch.',
+    productName: 'Leather Key Organizer',
+  },
+  {
+    imageUrl: 'https://cdn.shopify.com/s/files/1/0762/2433/2021/files/slate-coaster-heart.png?v=1755435099',
+    customerName: 'Emily & David',
+    reviewText: 'Our wedding favors were a huge hit! Everyone loved the custom heart-shaped coasters. Thank you, Luxcribe!',
+    productName: 'Slate Coasters',
+  },
+];
+
+
 // ===================================================================================
 // !! IMPORTANT !! PLEASE READ !!
 // ===================================================================================
@@ -277,10 +299,127 @@ export const productCatalog: { [key: string]: Product } = {
 };
 
 export const pageContent: PageContent = {
-    faq: { title: "Frequently Asked Questions", content: `<h2>How long do orders take?</h2><p>Processing (engraving) time for personalised items is 4–5 business days.</p><h2>What file types do you accept?</h2><p>Preferred: vector files (SVG, AI, EPS, PDF). High-resolution raster files (PNG, JPEG) at 300 DPI are acceptable.</p>` },
-    "track-order": { title: "Track Your Order", content: `<p>You will receive an email with tracking info once your order ships.</p>` },
-    shipping: { title: "Shipping & Delivery", content: `<h2>Processing time</h2><p>4–5 business days for personalised items.</p><h2>Carriers</h2><p>Domestic shipments are sent via Australia Post.</p>` },
-    returns: { title: "Returns & Refunds", content: `<h2>Personalised items</h2><p>Custom / personalised products are not eligible for change-of-mind returns.</p><h2>Faulty/damaged items</h2><p>If an item is faulty or damaged in transit, please email us with photos and your order number.</p>` },
-    privacy: { title: "Privacy Policy", content: `<h2>What we collect</h2><ul><li>Name, email, phone, postal address</li><li>Order details & artwork files</li></ul>` },
-    terms: { title: "Terms of Service", content: `<h2>Acceptance</h2><p>By placing an order with Luxcribe you agree to these Terms.</p>` }
+    faq: { 
+        title: "Frequently Asked Questions", 
+        content: `
+            <h2>Ordering & Design</h2>
+            <p><strong>What file types do you accept for custom uploads?</strong></p>
+            <p>We strongly prefer vector files (SVG, AI, EPS, PDF) for the cleanest results, especially for logos and text. For images and photos, we accept high-resolution raster files (PNG, JPEG) at 300 DPI. Please ensure your files adhere to the guidelines in our Terms of Service.</p>
+            <p><strong>How long does it take to process a personalized order?</strong></p>
+            <p>Standard processing time, which includes design setup and engraving, is typically 4–5 business days before the item is shipped. This does not include shipping time.</p>
+            
+            <h2>Shipping & Delivery</h2>
+            <p><strong>How can I track my order?</strong></p>
+            <p>Once your order has been dispatched, you will receive a shipping confirmation email that includes a tracking number and a link to the carrier's website.</p>
+        ` 
+    },
+    "track-order": { 
+        title: "Track Your Order", 
+        content: `
+            <h2>How It Works</h2>
+            <p>Once your order is engraved, packaged, and dispatched from our workshop, our system will automatically send you a shipping confirmation email.</p>
+            <p>This email will contain a unique tracking number and a link to the Australia Post tracking portal. Please allow up to 24 hours for the tracking information to become active after you receive the email.</p>
+            
+            <h2>Can't Find Your Email?</h2>
+            <p>If you haven't received a shipping confirmation email within 5 business days of placing your order, please check your spam or junk folder. If you still can't find it, please contact our customer support team with your order number, and we'll be happy to assist.</p>
+        ` 
+    },
+    shipping: { 
+        title: "Shipping & Delivery", 
+        content: `
+            <h2>Order Processing Time</h2>
+            <p>All personalized and custom-engraved items require a processing time of <strong>4–5 business days</strong>. This period allows our team to meticulously review your design, prepare the materials, and execute the engraving with the highest level of precision. Business days are Monday through Friday and exclude public holidays.</p>
+            
+            <h2>Domestic Shipping (Australia)</h2>
+            <p>All domestic shipments are sent via Australia Post. At checkout, you may have the option to choose from the following services:</p>
+            <ul>
+                <li><strong>Standard Post:</strong> Typically arrives within 3-7 business days after dispatch.</li>
+                <li><strong>Express Post:</strong> Typically arrives within 1-3 business days after dispatch for most metro areas.</li>
+            </ul>
+            <p>Please note that these are estimated delivery times provided by the carrier and are not guaranteed. Rural and remote areas may experience longer delivery times.</p>
+            
+            <h2>Shipping Costs</h2>
+            <p>Shipping costs are calculated automatically at the checkout page based on the weight of your order and your location. You will be able to review the shipping cost before confirming your order.</p>
+        ` 
+    },
+    returns: { 
+        title: "Returns & Refunds Policy", 
+        content: `
+            <h2>Custom & Personalised Items</h2>
+            <p>Due to the unique, custom nature of our engraved products, we are unable to offer returns or refunds for change of mind. Each item is created specifically for you. We strongly encourage you to double-check all text, dates, and design choices in the editor before finalizing your order.</p>
+            
+            <h2>Damaged, Faulty, or Incorrect Items</h2>
+            <p>We take great pride in our work, but in the rare event that your item arrives damaged, faulty, or is incorrect due to an error on our part, please contact us within <strong>7 days</strong> of receiving your order.</p>
+            <p>To help us resolve the issue quickly, please email us with the following information:</p>
+            <ul>
+                <li>Your full name and order number.</li>
+                <li>A clear description of the issue.</li>
+                <li>High-quality photos showing the damage, fault, or incorrect engraving.</li>
+            </ul>
+            <p>Upon review, we will arrange for a replacement or a full refund at no additional cost to you.</p>
+            
+            <h2>Cancellations</h2>
+            <p>If you need to cancel your order, please contact us as soon as possible. We can only accommodate cancellations if your order has not yet entered the production (engraving) phase.</p>
+        ` 
+    },
+    privacy: { 
+        title: "Privacy Policy", 
+        content: `
+            <p>Your privacy is important to us. This policy explains what information we collect and how we use it.</p>
+            <h2>Information We Collect</h2>
+            <ul>
+                <li><strong>Contact Information:</strong> Your name, email address, phone number, and postal address.</li>
+                <li><strong>Order Information:</strong> Details of the products you purchase, including customization details and artwork files you upload.</li>
+                <li><strong>Payment Information:</strong> We use Shopify Payments, a secure third-party payment processor. We do not store your credit card details on our servers.</li>
+                <li><strong>Communication:</strong> Any correspondence you have with us via email or our contact forms.</li>
+            </ul>
+            
+            <h2>How We Use Your Information</h2>
+            <ul>
+                <li>To process and fulfill your orders, including engraving and shipping.</li>
+                <li>To communicate with you about your order status, inquiries, and customer support requests.</li>
+                <li>To improve our products and services.</li>
+            </ul>
+            
+            <h2>Data Sharing</h2>
+            <p>We only share your information with essential third parties required to run our business, including:</p>
+            <ul>
+                <li><strong>Shopify:</strong> To power our online store and process orders.</li>
+                <li><strong>Shipping Carriers:</strong> Such as Australia Post, to deliver your orders.</li>
+                <li><strong>Formspree:</strong> To handle our custom quote and contact form submissions.</li>
+            </ul>
+            <p>We do not sell your personal information to any third parties.</p>
+        ` 
+    },
+    terms: { 
+        title: "Terms of Service", 
+        content: `
+            <p>By placing an order with Luxcribe, you agree to the following Terms and Conditions.</p>
+            
+            <h2>1. Online Design Tool & Previews</h2>
+            <p>The product customizer on our website is a powerful tool designed to provide a high-fidelity digital mockup of your final product. However, it is important to understand that this is a <strong>visual guide and not an exact replica</strong>.</p>
+            <p>The final appearance of the engraving can vary slightly due to factors such as:</p>
+            <ul>
+                <li>The natural grain and texture of the material (wood, leather, slate, etc.).</li>
+                <li>The physical limitations and characteristics of the laser engraving process.</li>
+                <li>Minor scaling and positioning adjustments made by our technicians to ensure the best possible outcome.</li>
+            </ul>
+            <p>By ordering, you acknowledge that the final product may have minor variations from the on-screen preview and that this does not constitute a product fault.</p>
+            
+            <h2>2. User-Submitted Artwork & Files</h2>
+            <p>You are solely responsible for the quality and content of any artwork, logos, or images you upload.</p>
+            <ul>
+                <li><strong>File Quality:</strong> For best results, you must adhere to our file guidelines. We are not responsible for poor engraving quality resulting from low-resolution images, incorrect file formats, or designs with elements that are too thin or complex to engrave cleanly.</li>
+                <li><strong>File Requirements:</strong> For SVGs, all text must be converted to outlines/paths, and overlapping shapes must be merged. For PNGs, the background must be transparent.</li>
+                <li><strong>Content Rights:</strong> By uploading a design, you represent and warrant that you have the legal right to use, reproduce, and display the content. You agree to indemnify Luxcribe against any claims of copyright or trademark infringement.</li>
+                <li><strong>Right to Refuse:</strong> We reserve the right to refuse any order that contains content that is illegal, hateful, or violates intellectual property rights.</li>
+            </ul>
+            
+            <h2>3. Orders & Payment</h2>
+            <p>All payments are processed securely through Shopify Payments. Order fulfillment is subject to payment confirmation and our standard processing times as outlined on our Shipping & Delivery page.</p>
+            
+            <h2>4. Limitation of Liability</h2>
+            <p>Luxcribe shall not be liable for any indirect, incidental, or consequential damages arising from the use of our products or services.</p>
+        ` 
+    }
 };

@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { FONT_FACES, ENGRAVING_COLORS } from '../constants';
 import { 
     UndoIcon, RedoIcon, AlignLeftIcon, AlignCenterIcon, AlignRightIcon, 
-    BoldIcon, ItalicIcon, UnderlineIcon, ChevronDownIcon, TrashIcon
+    BoldIcon, ItalicIcon, UnderlineIcon, ChevronDownIcon, TrashIcon, SparklesIcon
 } from './icons';
 import UploadGuideModal from './UploadGuideModal';
 
@@ -20,6 +20,7 @@ interface EditorToolbarProps {
     onTextCurveChange: (curve: number) => void;
     onDeleteObject: (obj: any) => void;
     materialStyle: any;
+    onOpenQuoteGenerator: () => void;
 }
 
 const Separator: React.FC = () => <div className="h-10 w-px bg-gray-300 mx-2" />;
@@ -159,7 +160,7 @@ const TextToolbar: React.FC<EditorToolbarProps> = (props) => {
 
 
 const EditorToolbar: React.FC<EditorToolbarProps> = (props) => {
-    const { activeObject, onAddText, onFileUpload, onUndo, onRedo, canUndo, canRedo, onDeleteObject } = props;
+    const { activeObject, onAddText, onFileUpload, onUndo, onRedo, canUndo, canRedo, onDeleteObject, onOpenQuoteGenerator } = props;
     const fileInputRef = useRef<HTMLInputElement>(null);
     const [isGuideModalOpen, setIsGuideModalOpen] = useState(false);
 
@@ -199,6 +200,13 @@ const EditorToolbar: React.FC<EditorToolbarProps> = (props) => {
                             className="px-6 py-2 bg-indigo-500 text-white rounded-md hover:bg-indigo-600 font-medium text-base h-12 transition-colors"
                         >
                             Add Text
+                        </button>
+                        <button 
+                            onClick={onOpenQuoteGenerator} 
+                            className="px-4 py-2 bg-purple-500 text-white rounded-md hover:bg-purple-600 font-medium text-base h-12 transition-colors flex items-center gap-2"
+                        >
+                            <SparklesIcon className="w-5 h-5"/>
+                            Inspire Me
                         </button>
                         <button 
                             onClick={() => setIsGuideModalOpen(true)}

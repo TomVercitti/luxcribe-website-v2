@@ -13,6 +13,7 @@ import Notification from '../components/Notification';
 import ZoneSelector from '../components/ZoneSelector';
 import { CartIcon, CloseIcon, InfoIcon, Spinner } from '../components/icons';
 import CartNotification from '../components/CartNotification';
+import AIQuoteGeneratorModal from '../components/AIQuoteGeneratorModal';
 
 type CanvasState = {
     json: string | null;
@@ -49,6 +50,8 @@ const EditorPage: React.FC = () => {
     
     const [zoneStates, setZoneStates] = useState<{ [key: string]: CanvasState }>({});
     const [activeZoneId, setActiveZoneId] = useState<string | null>(zoneId || null);
+
+    const [isQuoteModalOpen, setIsQuoteModalOpen] = useState(false);
 
     const isRestoringState = useRef(false);
 
@@ -507,14 +510,19 @@ const EditorPage: React.FC = () => {
     };
 
 
-    const addText = () => {
-        const text = new window.fabric.Textbox('Your Text', {
+    const addText = (textValue: string = 'Your Text') => {
+        const text = new window.fabric.Textbox(textValue, {
             fontFamily: 'Playfair Display',
             fontSize: 160,
             width: 450,
             data: { userAdded: true, type: 'textbox' }
         });
         addObjectToCanvas(text);
+    };
+
+    const addTextWithQuote = (quote: string) => {
+        addText(quote);
+        setIsQuoteModalOpen(false); // Close modal after adding
     };
     
     const modifyActiveObject = (props: { [key: string]: any }) => {
@@ -776,12 +784,17 @@ const EditorPage: React.FC = () => {
     return (
         <div className="flex flex-col lg:flex-row h-screen bg-gray-900 text-white overflow-hidden">
             <CartNotification />
+            <AIQuoteGeneratorModal
+                isOpen={isQuoteModalOpen}
+                onClose={() => setIsQuoteModalOpen(false)}
+                onSelectQuote={addTextWithQuote}
+            />
             {/* Main Editor Content */}
             <div className="flex-1 flex flex-col min-w-0">
                 <div className="flex-shrink-0 relative z-10">
                   <EditorToolbar 
                     activeObject={activeObject}
-                    onAddText={addText}
+                    onAddText={() => addText()}
                     onFileUpload={handleFileUpload}
                     onAddFromLibrary={addFromLibrary}
                     onUndo={handleUndo}
@@ -793,6 +806,7 @@ const EditorPage: React.FC = () => {
                     onTextCurveChange={handleTextCurveChange}
                     onDeleteObject={deleteLayer}
                     materialStyle={materialStyle}
+                    onOpenQuoteGenerator={() => setIsQuoteModalOpen(true)}
                   />
                 </div>
                 <main ref={editorContainerRef} className="flex-1 relative bg-gray-900 p-4 flex items-center justify-center overflow-hidden">
