@@ -22,17 +22,24 @@ exports.handler = async function(event, context) {
     const formData = new URLSearchParams();
     formData.append('form_type', 'contact');
     formData.append('utf8', '✓');
+    
+    // Add a tag to easily identify these submissions in Shopify
     formData.append('contact[tags]', 'custom-quote');
-    formData.append('contact[email]', data.email);
-    formData.append('contact[name]', data.name);
-    formData.append('contact[phone]', data.phone || '');
-    formData.append('contact[company]', data.company || '');
-    formData.append('contact[body]', `
+    
+    // Match the field names from the live Shopify theme (e.g., contact[Name], contact[Email])
+    formData.append('contact[Email]', data.email);
+    formData.append('contact[Name]', data.name);
+    formData.append('contact[Phone Number]', data.phone || '');
+    
+    // Combine remaining details into the main message body/comment field
+    const commentBody = `
 Project Description:
 ${data.description}
 
+Company: ${data.company || 'N/A'}
 ${data.fileName ? `File Reference: ${data.fileName}` : 'No file provided.'}
-    `);
+    `;
+    formData.append('contact[Comment]', commentBody);
     
     const shopifyContactUrl = `https://${shopifyDomain}/contact`;
 
