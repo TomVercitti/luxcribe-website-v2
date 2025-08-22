@@ -43,7 +43,7 @@ const CustomFormPage: React.FC = () => {
       fileName: fileName || '',
     };
 
-    fetch('/.netlify/functions/quote-request', {
+    fetch('/.netlify/functions/quoteRequest', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload),
