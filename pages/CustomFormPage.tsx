@@ -37,13 +37,12 @@ const CustomFormPage: React.FC = () => {
     const payload = { ...formData, fileName: fileName || '' };
 
     try {
-      const response = await fetch('/.netlify/functions/quoteRequest', { // Update URL if function filename is different
+      const response = await fetch('/.netlify/functions/quoteRequest', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
       });
 
-      // Safe JSON parsing
       let data;
       try {
         data = await response.json();
@@ -55,7 +54,6 @@ const CustomFormPage: React.FC = () => {
         throw new Error(data.message || 'An unknown server error occurred.');
       }
 
-      // Success: reset form
       setSubmissionStatus('success');
       setFormData({ name: '', email: '', phone: '', company: '', description: '' });
       setFileName(null);
@@ -141,7 +139,7 @@ const CustomFormPage: React.FC = () => {
               </button>
             </div>
             <p className="text-xs text-gray-500 text-center">
-              Your request will be sent to our team. Please note that the file itself is not uploaded, only a reference to its name is sent. We may follow up for the design file via email.
+              Your request will be sent to our team. Only a reference to the file name is sent. We may follow up via email for the actual design file.
             </p>
           </form>
         )}

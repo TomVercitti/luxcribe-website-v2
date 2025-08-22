@@ -1,81 +1,41 @@
-// netlify/functions/quoteRequest.js
+const shopifyDomain = process.env.SHOPIFY_STORE_DOMAIN;
+const shopifyToken = process.env.SHOPIFY_ADMIN_API_TOKEN;
 
-export async function handler(event, context) {
-  if (event.httpMethod !== 'POST') {
-    return {
-      statusCode: 405,
-      body: JSON.stringify({ message: 'Method Not Allowed' }),
-    };
-  }
+const data = JSON.parse(event.body);
 
-  // Shopify store domain from environment variable
-  const shopifyDomain = process.env.SHOPIFY_STORE_DOMAIN || 'dbrd1n-q5.myshopify.com';
-
-  if (!shopifyDomain || shopifyDomain.includes('YOUR_STORE_NAME')) {
-    console.error('SHOPIFY_STORE_DOMAIN environment variable is not set or is a placeholder.');
-    return {
-      statusCode: 500,
-      body: JSON.stringify({ message: 'Server configuration error. The store domain is not set.' }),
-    };
-  }
-
-  let data;
-  try {
-    data = JSON.parse(event.body);
-  } catch (parseErr) {
-    console.error('Error parsing request body:', parseErr);
-    return {
-      statusCode: 400,
-      body: JSON.stringify({ message: 'Invalid request payload.' }),
-    };
-  }
-
-  try {
-    const formData = new URLSearchParams();
-    formData.append('form_type', 'contact');
-    formData.append('utf8', '✓');
-    formData.append('contact[tags]', 'custom-quote');
-    formData.append('contact[email]', data.email);
-    formData.append('contact[name]', data.name);
-    formData.append('contact[phone]', data.phone || '');
-    formData.append('contact[company]', data.company || '');
-    formData.append(
-      'contact[body]',
-      `Project Description:
+// Create a customer
+const customerBody = {
+  customer: {
+    first_name: data.name.split(" ")[0] || "N/A",
+    last_name: data.name.split(" ")[1] || "N/A",
+    email: data.email,
+    phone: data.phone || "",
+    tags: "custom-quote",
+    note: `
+Project Description:
 ${data.description}
 
-${data.fileName ? `File Reference: ${data.fileName}` : 'No file provided.'}`
-    );
-
-    const shopifyContactUrl = `https://${shopifyDomain}/contact`;
-
-    const response = await fetch(shopifyContactUrl, {
-      method: 'POST',
-      body: formData,
-      headers: {
-        'Content-Type': 'application/x-www-form-urlencoded',
-        'User-Agent': 'Luxcribe-Quote-Function/1.0',
-      },
-    });
-
-    if (!response.ok) {
-      const errorBody = await response.text();
-      console.error(`Shopify submission failed (status ${response.status}):`, errorBody);
-      return {
-        statusCode: 500,
-        body: JSON.stringify({ message: `Failed to submit quote request (status ${response.status}).` }),
-      };
-    }
-
-    return {
-      statusCode: 200,
-      body: JSON.stringify({ message: 'Quote request submitted successfully!' }),
-    };
-  } catch (err) {
-    console.error('Unexpected error in quoteRequest function:', err);
-    return {
-      statusCode: 500,
-      body: JSON.stringify({ message: 'There was an error submitting your request. Please try again.' }),
-    };
+${data.fileName ? `File Reference: ${data.fileName}` : 'No file provided.'}
+    `
   }
+};
+
+const response = await fetch(`https://${shopifyDomain}/admin/api/2025-07/customers.json`, {
+  method: "POST",
+  headers: {
+    "Content-Type": "application/json",
+    "X-Shopify-Access-Token": shopifyToken
+  },
+  body: JSON.stringify(customerBody)
+});
+
+if (!response.ok) {
+  const errorBody = await response.text();
+  console.error(`Shopify submission failed (status ${response.status}): ${errorBody}`);
+  throw new Error(`Failed to submit to Shopify (status: ${response.status})`);
 }
+
+return {
+  statusCode: 200,
+  body: JSON.stringify({ message: "Quote request submitted successfully!" })
+};
