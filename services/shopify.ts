@@ -1,10 +1,10 @@
 import { SHOPIFY_STORE_DOMAIN, SHOPIFY_STOREFRONT_ACCESS_TOKEN } from '../config';
 import type { ShopifyCart, CartItem } from '../types';
 
-// To prevent Cross-Origin (CORS) issues in a buildless setup, we use a public CORS proxy.
-// This proxy adds the necessary CORS headers to the Shopify API response, allowing the browser to connect.
-// NOTE: For production applications, it is recommended to host your own CORS proxy for security and reliability.
-const SHOPIFY_API_URL = `https://corsproxy.io/?https://${SHOPIFY_STORE_DOMAIN}/api/2024-04/graphql.json`;
+// The new API endpoint is our own serverless function. This resolves potential CORS issues,
+// hides the access token from client-side network requests, and works consistently in
+// both local development (with Netlify Dev) and production.
+const SHOPIFY_API_URL = '/.netlify/functions/shopify';
 
 
 const storefrontApi = async <T>(query: string, variables: Record<string, any> = {}): Promise<T> => {
@@ -12,32 +12,36 @@ const storefrontApi = async <T>(query: string, variables: Record<string, any> = 
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
-            'X-Shopify-Storefront-Access-Token': SHOPIFY_STOREFRONT_ACCESS_TOKEN,
         },
         body: JSON.stringify({ query, variables }),
     });
     
-    if (!response.ok) {
-        // Handle non-GraphQL errors (e.g., auth, server errors) first.
-        console.error("Shopify API HTTP Error:", { status: response.status });
-        switch (response.status) {
-            case 401:
-            case 403:
-                throw new Error("Authentication error: Your Shopify Storefront Access Token is likely invalid or missing the required permissions. Please check the token's permissions in your Shopify Admin under 'Storefront API access scopes'.");
-            case 404:
-                 throw new Error("Store not found: The Shopify Store Domain you provided could not be found. Please double-check it in the `config.ts` file.");
-            default:
-                 throw new Error(`Shopify API request failed with status ${response.status}. Check your network connection and that your Shopify store is active.`);
-        }
-    }
-
     const json = await response.json();
 
+    // Centralized error check: Shopify's GraphQL API almost always returns a 200 OK
+    // status but places errors in an `errors` array in the response body.
     if (json.errors) {
         const errorMessage = json.errors.map((e: any) => e.message).join(', ');
         console.error("Shopify GraphQL Errors:", JSON.stringify(json.errors, null, 2));
+        // Provide more helpful, user-facing error messages for common issues.
+        if (errorMessage.toLowerCase().includes('access denied for storefrontaccesstoken')) {
+             throw new Error(`Shopify Auth Error: The Access Token is invalid or missing required permissions. Please check the server configuration.`);
+        }
+        if (errorMessage.toLowerCase().includes('merchandise')) {
+             throw new Error(`Shopify Error: The selected product variant is invalid. Please check the 'variantId' values in constants.ts.`);
+        }
         throw new Error(`Shopify GraphQL Error: ${errorMessage}`);
     }
+
+    // This handles errors from our proxy function itself (e.g., missing env vars) or network failures.
+    if (!response.ok) {
+        console.error("Shopify Proxy Error:", { status: response.status, body: json });
+        if (json.error) {
+            throw new Error(`Server Error: ${json.error}`);
+        }
+        throw new Error(`The API request failed with status ${response.status}.`);
+    }
+
 
     return json.data;
 };
@@ -91,23 +95,12 @@ export const createCart = async (): Promise<ShopifyCart | null> => {
                 cart {
                     ...CartFragment
                 }
-                userErrors {
-                    field
-                    message
-                }
             }
         }
         ${cartFragment}
     `;
     const variables = { input: {} };
-    const data = await storefrontApi<{ cartCreate: { cart: ShopifyCart | null, userErrors: { message: string }[] } }>(query, variables);
-    
-    if (data.cartCreate.userErrors.length > 0) {
-        const errorMessage = data.cartCreate.userErrors.map(e => e.message).join(', ');
-        console.error("Shopify User Errors (cartCreate):", data.cartCreate.userErrors);
-        throw new Error(`Shopify Error: ${errorMessage}`);
-    }
-
+    const data = await storefrontApi<{ cartCreate: { cart: ShopifyCart | null } }>(query, variables);
     return data.cartCreate.cart;
 };
 
@@ -132,10 +125,6 @@ export const addLinesToCart = async (cartId: string, lines: CartItem[]): Promise
                 cart {
                     ...CartFragment
                 }
-                userErrors {
-                    field
-                    message
-                }
             }
         }
         ${cartFragment}
@@ -146,18 +135,8 @@ export const addLinesToCart = async (cartId: string, lines: CartItem[]): Promise
         attributes: item.attributes,
     }));
     const variables = { cartId, lines: shopifyLines };
-    const data = await storefrontApi<{ cartLinesAdd: { cart: ShopifyCart | null, userErrors: { message: string }[] } }>(query, variables);
+    const data = await storefrontApi<{ cartLinesAdd: { cart: ShopifyCart | null } }>(query, variables);
     
-    if (data.cartLinesAdd.userErrors.length > 0) {
-        const errorMessage = data.cartLinesAdd.userErrors.map(e => e.message).join(', ');
-        console.error("Shopify User Errors (cartLinesAdd):", data.cartLinesAdd.userErrors);
-        // Provide a more helpful error for the most likely problem.
-        if (errorMessage.toLowerCase().includes('merchandise')) {
-             throw new Error(`Shopify Error: The selected product variant is invalid. Please check the 'variantId' values in constants.ts.`);
-        }
-        throw new Error(`Shopify Error: ${errorMessage}`);
-    }
-
     return data.cartLinesAdd.cart;
 };
 
@@ -168,22 +147,12 @@ export const removeLinesFromCart = async (cartId: string, lineIds: string[]): Pr
                 cart {
                     ...CartFragment
                 }
-                userErrors {
-                    field
-                    message
-                }
             }
         }
         ${cartFragment}
     `;
     const variables = { cartId, lineIds };
-    const data = await storefrontApi<{ cartLinesRemove: { cart: ShopifyCart | null, userErrors: { message: string }[] } }>(query, variables);
-
-    if (data.cartLinesRemove.userErrors.length > 0) {
-        const errorMessage = data.cartLinesRemove.userErrors.map(e => e.message).join(', ');
-        console.error("Shopify User Errors (cartLinesRemove):", data.cartLinesRemove.userErrors);
-        throw new Error(`Shopify Error: ${errorMessage}`);
-    }
+    const data = await storefrontApi<{ cartLinesRemove: { cart: ShopifyCart | null } }>(query, variables);
 
     return data.cartLinesRemove.cart;
 };
