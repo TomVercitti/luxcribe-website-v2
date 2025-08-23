@@ -15,6 +15,7 @@ import ZoneSelector from '../components/ZoneSelector';
 import { CartIcon, CloseIcon, InfoIcon, Spinner } from '../components/icons';
 import CartNotification from '../components/CartNotification';
 import AIQuoteGeneratorModal from '../components/AIQuoteGeneratorModal';
+import TextEffectsControls from '../components/TextEffectsControls';
 
 type CanvasState = {
     json: string | null;
@@ -183,6 +184,15 @@ const EditorPage: React.FC = () => {
         if (!fabricRef.current || !productData) return;
 
         const currentCanvas = fabricRef.current;
+
+        // This is the key part to update the toolbar's view of the active object
+        const currentActive = currentCanvas.getActiveObject();
+        if (currentActive && currentActive.data?.userAdded) {
+            setActiveObject(currentActive);
+        } else {
+            setActiveObject(null);
+        }
+
         const userObjects = currentCanvas.getObjects().filter((obj: any) => obj.data?.userAdded).reverse();
         setLayers(userObjects);
 
@@ -568,6 +578,7 @@ const EditorPage: React.FC = () => {
         activeObject.set(props);
         fabricRef.current.renderAll();
         updateHistory(fabricRef.current);
+        updateLayersAndPrice();
     }
     
     const toggleTextStyle = (style: 'bold' | 'italic' | 'underline') => {
@@ -598,7 +609,9 @@ const EditorPage: React.FC = () => {
                 activeObject.set('path', null);
             } else {
                 const width = activeObject.width;
+                // This formula creates a reasonable arc radius based on the slider value and text width
                 const radius = (width * 5) / (curve / 10);
+                // An SVG path definition for an arc
                 const pathData = curve > 0 
                     ? `M 0 ${-radius} A ${radius} ${radius} 0 0 1 ${width} ${-radius}`
                     : `M 0 ${radius} A ${radius} ${radius} 0 0 0 ${width} ${radius}`;
@@ -612,6 +625,7 @@ const EditorPage: React.FC = () => {
             }
             fabricRef.current.renderAll();
             updateHistory(fabricRef.current);
+            updateLayersAndPrice();
         }
     }
     
@@ -922,6 +936,12 @@ const EditorPage: React.FC = () => {
                   )}
 
                   <LayersPanel layers={layers} onSelectLayer={selectLayer} onDeleteLayer={deleteLayer} activeObject={activeObject} />
+
+                  <TextEffectsControls
+                    activeObject={activeObject}
+                    onCurveChange={handleTextCurveChange}
+                    onRotateChange={angle => modifyActiveObject({ angle })}
+                  />
 
                   <div className="mt-8">
                     {isLoadingPrice ? (

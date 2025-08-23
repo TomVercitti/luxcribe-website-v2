@@ -1,6 +1,7 @@
 import React from 'react';
+import CustomerReviews from '../components/CustomerReviews';
+import ReviewSubmissionForm from '../components/ReviewSubmissionForm';
 import { Link } from 'react-router-dom';
-import CustomerGallery from '../components/CustomerGallery';
 
 const HomePage: React.FC = () => {
   return (
@@ -50,17 +51,13 @@ const HomePage: React.FC = () => {
           </div>
       </section>
       
-      {/* Customer Gallery Section */}
+      {/* Customer Reviews Section */}
       <section id="reviews" className="py-20 bg-gray-900">
           <div className="container mx-auto px-4 text-center">
-              <h3 className="text-4xl md:text-5xl font-playfair mb-4">Creations From Our Community</h3>
+              <h3 className="text-4xl md:text-5xl font-playfair mb-4">What Our Customers Say</h3>
               <p className="max-w-3xl mx-auto mt-4 mb-12 text-gray-400">See what our customers have brought to life with our AI-powered design tools.</p>
-              <CustomerGallery />
-              <div className="text-center mt-12">
-                  <Link to="/contact" className="px-8 py-3 bg-indigo-600 text-white font-semibold rounded-lg hover:bg-indigo-700 transition-colors">
-                    Share Your Creation
-                  </Link>
-              </div>
+              <CustomerReviews />
+              <ReviewSubmissionForm />
           </div>
       </section>
     </div>

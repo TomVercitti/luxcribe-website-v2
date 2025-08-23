@@ -164,3 +164,17 @@ export const SparklesIcon: React.FC<{ className?: string }> = ({ className }) =>
         <path d="M9.1,2.5L8,5.3L5.2,6.4l2.8,1.1l1.1,2.8l1.1-2.8l2.8-1.1L10.2,5.3L9.1,2.5z M18.1,9.5L17,12.3l-2.8,1.1l2.8,1.1 l1.1,2.8l1.1-2.8l2.8-1.1l-2.8-1.1L18.1,9.5z M14.1,2.5L13,5.3l-2.8,1.1l2.8,1.1l1.1,2.8l1.1-2.8l2.8-1.1L15.2,5.3L14.1,2.5z"/>
     </svg>
 );
+
+export const StarIcon: React.FC<{ className?: string; filled?: boolean }> = ({ className, filled = true }) => (
+    <svg 
+      viewBox="0 0 24 24" 
+      className={className || iconProps.className}
+      fill={filled ? "currentColor" : "none"}
+      stroke="currentColor"
+      strokeWidth={filled ? "1" : "2"}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+        <path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"></path>
+    </svg>
+);

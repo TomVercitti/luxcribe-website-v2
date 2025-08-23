@@ -198,10 +198,9 @@ const ProductDetailPage: React.FC = () => {
               </div>
 
                <div className="flex flex-col gap-3">
-                 {selectedVariation.engravingZones.map(zone => (
+                 {selectedVariation.engravingZones.length > 0 && (
                    <Link
-                     key={zone.id}
-                     to={isCtaDisabled ? '#' : `/editor/${product.id}/${selectedVariation.id}/${zone.id}`}
+                     to={isCtaDisabled ? '#' : `/editor/${product.id}/${selectedVariation.id}/${selectedVariation.engravingZones[0].id}`}
                      className={`block w-full text-center px-6 py-3 font-semibold rounded-md transition-colors text-lg
                       ${isCtaDisabled 
                         ? 'bg-gray-600 text-gray-400 cursor-not-allowed pointer-events-none' 
@@ -212,7 +211,7 @@ const ProductDetailPage: React.FC = () => {
                    >
                      Customize
                    </Link>
-                 ))}
+                 )}
                </div>
              </div>
              {!hasMultipleVariations && (

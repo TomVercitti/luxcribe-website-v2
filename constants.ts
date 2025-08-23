@@ -84,9 +84,30 @@ export const DESIGN_LIBRARY_ITEMS = [
   },
 ];
 
+export const customerReviews = [
+  {
+    customerName: 'Jessica L.',
+    reviewText: 'The custom slate coasters for our anniversary were perfect. The design process was so easy and they look fantastic!',
+    productName: 'Slate Coasters',
+    rating: 5,
+  },
+  {
+    customerName: 'Mark T.',
+    reviewText: 'I ordered a personalized leather key organizer for my husband and he loves it. The engraving quality is top-notch.',
+    productName: 'Leather Key Organizer',
+    rating: 5,
+  },
+  {
+    customerName: 'Emily & David',
+    reviewText: 'Our wedding favors were a huge hit! Everyone loved the custom heart-shaped coasters. Thank you, Luxcribe!',
+    productName: 'Slate Coasters',
+    rating: 5,
+  },
+];
+
 export const customerGalleryItems = [
   {
-    imageUrl: 'https://cdn.shopify.com/s/files/1/0762/2433/2021/files/slate-coaster-square.png?v=1755435099',
+    imageUrl: 'https://cdn.shopify.com/s/files/1/0762/2433/2021/files/Cicle_430x.webp?v=1755923098#',
     customerName: 'Jessica L.',
     reviewText: 'The custom slate coasters for our anniversary were perfect. The design process was so easy and they look fantastic!',
     productName: 'Slate Coasters',
@@ -98,7 +119,7 @@ export const customerGalleryItems = [
     productName: 'Leather Key Organizer',
   },
   {
-    imageUrl: 'https://cdn.shopify.com/s/files/1/0762/2433/2021/files/slate-coaster-heart.png?v=1755435099',
+    imageUrl: 'https://cdn.shopify.com/s/files/1/0762/2433/2021/files/Heart_430x.webp?v=1755923137#',
     customerName: 'Emily & David',
     reviewText: 'Our wedding favors were a huge hit! Everyone loved the custom heart-shaped coasters. Thank you, Luxcribe!',
     productName: 'Slate Coasters',
@@ -151,22 +172,22 @@ export const productCatalog: { [key: string]: Product } = {
     name: 'Slate Coasters',
     category: 'Drinkware & Barware',
     description: 'Natural slate coasters, perfect for protecting surfaces with a rustic, elegant touch. Personalize them with a logo, monogram, or custom design. Each coaster has padded feet to prevent scratching.',
-    basePrice: 14.99, // This is a FALLBACK price. The actual price is fetched live from Shopify.
+    basePrice: 12.99, // This is a FALLBACK price. The actual price is fetched live from Shopify.
     variations: [
-      { 
-        id: 'slate-coaster-square', 
-        name: 'Square',
-        material: 'slate',
-        mockupImage: 'https://cdn.shopify.com/s/files/1/0762/2433/2021/files/Square_430x.webp?v=1755923080#',
-        variantId: 'gid://shopify/ProductVariant/46969021563125',
-        engravingZones: [{ id: 'center', name: 'Center', bounds: { x: 250, y: 150, width: 300, height: 300 } }] 
-      },
       { 
         id: 'slate-coaster-circle', 
         name: 'Circle',
         material: 'slate',
         mockupImage: 'https://cdn.shopify.com/s/files/1/0762/2433/2021/files/Cicle_430x.webp?v=1755923098#',
         variantId: 'gid://shopify/ProductVariant/46969021497589',
+        engravingZones: [{ id: 'center', name: 'Center', bounds: { x: 250, y: 150, width: 300, height: 300 } }] 
+      },
+      { 
+        id: 'slate-coaster-square', 
+        name: 'Square',
+        material: 'slate',
+        mockupImage: 'https://cdn.shopify.com/s/files/1/0762/2433/2021/files/Square_430x.webp?v=1755923080#',
+        variantId: 'gid://shopify/ProductVariant/46969021563125',
         engravingZones: [{ id: 'center', name: 'Center', bounds: { x: 250, y: 150, width: 300, height: 300 } }] 
       },
       { 
@@ -268,6 +289,111 @@ export const productCatalog: { [key: string]: Product } = {
         variantId: 'gid://shopify/ProductVariant/46958815346933',
         engravingZones: [{ id: 'front', name: 'Front', bounds: { x: 250, y: 300, width: 300, height: 150 } }] 
       }
+    ]
+  },
+  'metal-business-cards': {
+    id: 'metal-business-cards',
+    name: 'Metal Company/Business Cards (50 pack)',
+    category: 'Office & Stationery',
+    description: 'Make a lasting impression with premium, laser-engraved metal business cards. Durable, unique, and fully customizable on both sides. This pack includes 50 cards.',
+    basePrice: 37.99,
+    variations: [
+      { 
+        id: 'mbc-rose-gold', 
+        name: 'Rose Gold',
+        colorHex: '#b76e79',
+        material: 'metal',
+        mockupImage: 'https://cdn.shopify.com/s/files/1/0762/2433/2021/files/S8f19d989cf7e4809bb17bfa1eed83bcbN_430x.webp?v=1755933870#',
+        variantId: 'gid://shopify/ProductVariant/46974554013941',
+        engravingZones: [
+            { id: 'front', name: 'Front Side', bounds: { x: 100, y: 128, width: 600, height: 343 } },
+            { id: 'back', name: 'Back Side', bounds: { x: 100, y: 128, width: 600, height: 343 } }
+        ] 
+      },
+      { 
+        id: 'mbc-black', 
+        name: 'Black',
+        colorHex: '#000000',
+        material: 'metal',
+        mockupImage: 'https://cdn.shopify.com/s/files/1/0762/2433/2021/files/S413680f4d9154642a8709de9cdf60c57I_430x.webp?v=1755933870#',
+        variantId: 'gid://shopify/ProductVariant/46974553850101',
+        engravingZones: [
+            { id: 'front', name: 'Front Side', bounds: { x: 100, y: 128, width: 600, height: 343 } },
+            { id: 'back', name: 'Back Side', bounds: { x: 100, y: 128, width: 600, height: 343 } }
+        ] 
+      },
+      { 
+        id: 'mbc-matte-black', 
+        name: 'Matte Black',
+        colorHex: '#2f2f2f',
+        material: 'metal',
+        mockupImage: 'https://cdn.shopify.com/s/files/1/0762/2433/2021/files/S34b021b7b6d34369a63c64ca46f4915dt_430x.webp?v=1755933871#',
+        variantId: 'gid://shopify/ProductVariant/46974553882869',
+        engravingZones: [
+            { id: 'front', name: 'Front Side', bounds: { x: 100, y: 128, width: 600, height: 343 } },
+            { id: 'back', name: 'Back Side', bounds: { x: 100, y: 128, width: 600, height: 343 } }
+        ] 
+      },
+      { 
+        id: 'mbc-gold', 
+        name: 'Gold',
+        colorHex: '#ffd700',
+        material: 'metal',
+        mockupImage: 'https://cdn.shopify.com/s/files/1/0762/2433/2021/files/S1ab1d5688c854687a67671043ceb872ck_430x.webp?v=1755933871#',
+        variantId: 'gid://shopify/ProductVariant/46974553817333',
+        engravingZones: [
+            { id: 'front', name: 'Front Side', bounds: { x: 100, y: 128, width: 600, height: 343 } },
+            { id: 'back', name: 'Back Side', bounds: { x: 100, y: 128, width: 600, height: 343 } }
+        ] 
+      },
+      { 
+        id: 'mbc-silver', 
+        name: 'Silver',
+        colorHex: '#c0c0c0',
+        material: 'metal',
+        mockupImage: 'https://cdn.shopify.com/s/files/1/0762/2433/2021/files/S78c13580d82b4794977cfd301b7e836cl_430x.webp?v=1755933871#',
+        variantId: 'gid://shopify/ProductVariant/46974553981173',
+        engravingZones: [
+            { id: 'front', name: 'Front Side', bounds: { x: 100, y: 128, width: 600, height: 343 } },
+            { id: 'back', name: 'Back Side', bounds: { x: 100, y: 128, width: 600, height: 343 } }
+        ] 
+      },
+      { 
+        id: 'mbc-red', 
+        name: 'Red',
+        colorHex: '#a02c2c',
+        material: 'metal',
+        mockupImage: 'https://cdn.shopify.com/s/files/1/0762/2433/2021/files/Sa6f9f7e533c44479a41fde0cf67d64c0d_430x.webp?v=1755933871#',
+        variantId: 'gid://shopify/ProductVariant/46974553915637',
+        engravingZones: [
+            { id: 'front', name: 'Front Side', bounds: { x: 100, y: 128, width: 600, height: 343 } },
+            { id: 'back', name: 'Back Side', bounds: { x: 100, y: 128, width: 600, height: 343 } }
+        ] 
+      },
+      { 
+        id: 'mbc-purple', 
+        name: 'Purple',
+        colorHex: '#5a3e8a',
+        material: 'metal',
+        mockupImage: 'https://cdn.shopify.com/s/files/1/0762/2433/2021/files/S33f3541a914a49d18a774cd960f26ad5Z_430x.webp?v=1755933870#',
+        variantId: 'gid://shopify/ProductVariant/46974553948405',
+        engravingZones: [
+            { id: 'front', name: 'Front Side', bounds: { x: 100, y: 128, width: 600, height: 343 } },
+            { id: 'back', name: 'Back Side', bounds: { x: 100, y: 128, width: 600, height: 343 } }
+        ] 
+      },
+      { 
+        id: 'mbc-green', 
+        name: 'Green',
+        colorHex: '#3e8a5a',
+        material: 'metal',
+        mockupImage: 'https://cdn.shopify.com/s/files/1/0762/2433/2021/files/S0041519b03924a0bb1270cca1a68deb5U_430x.webp?v=1755933871#',
+        variantId: 'gid://shopify/ProductVariant/46974554046709',
+        engravingZones: [
+            { id: 'front', name: 'Front Side', bounds: { x: 100, y: 128, width: 600, height: 343 } },
+            { id: 'back', name: 'Back Side', bounds: { x: 100, y: 128, width: 600, height: 343 } }
+        ] 
+      },
     ]
   },
   /*
