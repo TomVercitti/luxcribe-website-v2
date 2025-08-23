@@ -23,7 +23,7 @@ interface EditorToolbarProps {
     onOpenQuoteGenerator: () => void;
 }
 
-const Separator: React.FC = () => <div className="h-10 w-px bg-gray-300 mx-2" />;
+const Separator: React.FC = () => <div className="h-10 w-px bg-gray-300 mx-2 flex-shrink-0" />;
 
 const ToolbarButton: React.FC<{ 
     onClick?: () => void; 
@@ -37,7 +37,7 @@ const ToolbarButton: React.FC<{
         onClick={onClick}
         disabled={disabled}
         className={`
-            flex items-center justify-center 
+            flex items-center justify-center flex-shrink-0
             w-12 h-12 rounded-md 
             text-base
             transition-colors
@@ -65,7 +65,7 @@ const FontSelector: React.FC<{ value: string; onChange: (font: string) => void; 
     }, []);
     
     return (
-        <div className="relative" ref={containerRef}>
+        <div className="relative flex-shrink-0" ref={containerRef}>
             <button 
                 onClick={() => setIsOpen(!isOpen)} 
                 className="flex items-center justify-between w-52 h-12 px-3 border border-gray-300 rounded-md bg-white text-gray-800 text-base font-medium"
@@ -102,7 +102,7 @@ const FontSizeInput: React.FC<{ value: number; onChange: (size: number) => void;
     const step = (amount: number) => onChange(Math.max(1, value + amount));
 
     return (
-        <div className="flex items-center border border-gray-300 rounded-md h-12 bg-white">
+        <div className="flex items-center border border-gray-300 rounded-md h-12 bg-white flex-shrink-0">
             <button onClick={() => step(-5)} className="px-3 h-full hover:bg-gray-200 text-lg rounded-l-md transition-colors">-</button>
             <input 
                 type="number"
@@ -122,7 +122,7 @@ const ColorPalette: React.FC<{ value: string; onChange: (color: string) => void;
     const displayColor = { name: 'Material Color', hex: materialFill };
     
     return (
-        <div className="flex items-center space-x-2" title={`Engraving Color for this Material: ${materialFill}`}>
+        <div className="flex items-center space-x-2 flex-shrink-0" title={`Engraving Color for this Material: ${materialFill}`}>
             <div
                 className="w-8 h-8 rounded-full ring-2 ring-offset-2 ring-offset-white ring-indigo-500"
                 style={{ backgroundColor: displayColor.hex }}
@@ -141,13 +141,13 @@ const TextToolbar: React.FC<EditorToolbarProps> = (props) => {
             <FontSelector value={activeObject.fontFamily} onChange={(font) => onModification({ fontFamily: font })} />
             <FontSizeInput value={Math.round(activeObject.fontSize)} onChange={(size) => onModification({ fontSize: size })} />
             <Separator />
-            <div className="flex items-center bg-gray-100 rounded-md">
+            <div className="flex items-center bg-gray-100 rounded-md flex-shrink-0">
                 <ToolbarButton title="Bold" onClick={() => onToggleTextStyle('bold')} isActive={activeObject.fontWeight === 'bold'}><BoldIcon className="w-6 h-6"/></ToolbarButton>
                 <ToolbarButton title="Italic" onClick={() => onToggleTextStyle('italic')} isActive={activeObject.fontStyle === 'italic'}><ItalicIcon className="w-6 h-6"/></ToolbarButton>
                 <ToolbarButton title="Underline" onClick={() => onToggleTextStyle('underline')} isActive={activeObject.underline}><UnderlineIcon className="w-6 h-6"/></ToolbarButton>
             </div>
             <Separator />
-            <div className="flex items-center bg-gray-100 rounded-md">
+            <div className="flex items-center bg-gray-100 rounded-md flex-shrink-0">
                 <ToolbarButton title="Align Left" onClick={() => onModification({ textAlign: 'left' })} isActive={activeObject.textAlign === 'left'}><AlignLeftIcon className="w-6 h-6"/></ToolbarButton>
                 <ToolbarButton title="Align Center" onClick={() => onModification({ textAlign: 'center' })} isActive={activeObject.textAlign === 'center'}><AlignCenterIcon className="w-6 h-6"/></ToolbarButton>
                 <ToolbarButton title="Align Right" onClick={() => onModification({ textAlign: 'right' })} isActive={activeObject.textAlign === 'right'}><AlignRightIcon className="w-6 h-6"/></ToolbarButton>
@@ -173,7 +173,7 @@ const EditorToolbar: React.FC<EditorToolbarProps> = (props) => {
 
     return (
         <>
-            <div className="bg-white text-gray-800 shadow-md p-2 flex items-center space-x-2 flex-wrap">
+            <div className="bg-white text-gray-800 shadow-md p-2 flex items-center space-x-2 flex-nowrap overflow-x-auto no-scrollbar">
                 <ToolbarButton title="Undo" onClick={onUndo} disabled={!canUndo}>
                     <UndoIcon className="w-6 h-6" />
                 </ToolbarButton>
@@ -194,7 +194,7 @@ const EditorToolbar: React.FC<EditorToolbarProps> = (props) => {
                 )}
 
                 {!activeObject && (
-                    <div className="flex items-center space-x-2">
+                    <div className="flex items-center space-x-2 flex-shrink-0">
                         <button 
                             onClick={onAddText} 
                             className="px-6 py-2 bg-indigo-500 text-white rounded-md hover:bg-indigo-600 font-medium text-base h-12 transition-colors"

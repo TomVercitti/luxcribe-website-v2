@@ -20,7 +20,7 @@ const HomePage: React.FC = () => {
         </video>
         <div className="absolute inset-0 bg-black bg-opacity-30 z-10"></div>
         <div className="relative z-20 container mx-auto px-4">
-          <h1 className="text-5xl md:text-6xl font-bold font-playfair mb-4">Your Vision,<br/>Laser Crafted.</h1>
+          <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold font-playfair mb-4">Your Vision,<br/>Laser Crafted.</h1>
           <p className="text-xl md:text-2xl mb-8">
             Personalized gifts, unique decor, and custom creations.
           </p>

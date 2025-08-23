@@ -12,7 +12,7 @@ import PricingBreakdown from '../components/PricingBreakdown';
 import LayersPanel from '../components/LayersPanel';
 import Notification from '../components/Notification';
 import ZoneSelector from '../components/ZoneSelector';
-import { CartIcon, CloseIcon, InfoIcon, Spinner } from '../components/icons';
+import { CartIcon, CloseIcon, InfoIcon, Spinner, CogIcon } from '../components/icons';
 import CartNotification from '../components/CartNotification';
 import AIQuoteGeneratorModal from '../components/AIQuoteGeneratorModal';
 import TextEffectsControls from '../components/TextEffectsControls';
@@ -77,6 +77,7 @@ const EditorPage: React.FC = () => {
     const [isQuoteModalOpen, setIsQuoteModalOpen] = useState(false);
     const [shopifyProduct, setShopifyProduct] = useState<ShopifyProduct | null>(null);
     const [isLoadingPrice, setIsLoadingPrice] = useState(true);
+    const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
 
 
     const isRestoringState = useRef(false);
@@ -859,6 +860,15 @@ const EditorPage: React.FC = () => {
                 onClose={() => setIsQuoteModalOpen(false)}
                 onSelectQuote={addTextWithQuote}
             />
+            {/* Backdrop for mobile sidebar */}
+            {isMobileSidebarOpen && (
+                <div
+                    className="fixed inset-0 bg-black bg-opacity-60 z-40 lg:hidden"
+                    onClick={() => setIsMobileSidebarOpen(false)}
+                    aria-hidden="true"
+                />
+            )}
+
             {/* Main Editor Content */}
             <div className="flex-1 flex flex-col min-w-0">
                 <div className="flex-shrink-0 relative z-10">
@@ -901,14 +911,19 @@ const EditorPage: React.FC = () => {
             </div>
 
 
-            {/* Sidebar */}
-            <aside className="w-full lg:w-96 bg-gray-800 p-6 flex-shrink-0 flex flex-col justify-between overflow-y-auto">
+            {/* Sidebar / Mobile Panel */}
+             <aside className={`bg-gray-800 flex-shrink-0 flex flex-col justify-between lg:w-96 lg:p-6 lg:static lg:h-auto lg:overflow-y-auto lg:transform-none lg:transition-none lg:z-auto fixed bottom-0 left-0 right-0 h-[75vh] rounded-t-2xl p-6 z-50 overflow-y-auto transform transition-transform duration-300 ease-in-out ${isMobileSidebarOpen ? 'translate-y-0' : 'translate-y-full'}`}>
                 <div>
                   <div className="flex justify-between items-center border-b border-gray-700 pb-3 mb-6">
                     <h2 className="text-2xl font-playfair">Design Details</h2>
+                    {/* Close button for mobile */}
+                    <button onClick={() => setIsMobileSidebarOpen(false)} className="lg:hidden text-gray-400 hover:text-white" aria-label="Close design controls">
+                        <CloseIcon />
+                    </button>
+                     {/* Cart icon for desktop */}
                      <button
                         onClick={toggleCart}
-                        className="relative text-gray-300 hover:text-indigo-400 transition-colors"
+                        className="hidden lg:block relative text-gray-300 hover:text-indigo-400 transition-colors"
                         aria-label="Open shopping cart"
                     >
                         <CartIcon />
@@ -988,6 +1003,29 @@ const EditorPage: React.FC = () => {
                     </button>
                  </div>
             </aside>
+            
+            {/* Floating Action Buttons for Mobile */}
+            <div className="lg:hidden fixed bottom-6 right-6 z-40 flex flex-col gap-4">
+                <button
+                    onClick={toggleCart}
+                    className="relative bg-gray-800 text-white w-16 h-16 rounded-full shadow-lg flex items-center justify-center"
+                    aria-label="Open shopping cart"
+                >
+                    <CartIcon className="w-8 h-8"/>
+                    {cartCount > 0 && (
+                        <span className="absolute top-0 right-0 w-6 h-6 bg-red-500 text-white text-xs rounded-full flex items-center justify-center border-2 border-gray-800">
+                        {cartCount}
+                        </span>
+                    )}
+                </button>
+                <button
+                    onClick={() => setIsMobileSidebarOpen(true)}
+                    className="bg-indigo-600 text-white w-16 h-16 rounded-full shadow-lg flex items-center justify-center"
+                    aria-label="Open design controls"
+                >
+                    <CogIcon className="w-8 h-8"/>
+                </button>
+            </div>
         </div>
     );
 };

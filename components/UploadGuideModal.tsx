@@ -13,7 +13,7 @@ const UploadGuideModal: React.FC<UploadGuideModalProps> = ({ isOpen, onClose, on
   return (
     <>
       <div className="fixed inset-0 bg-black bg-opacity-70 z-50" onClick={onClose} />
-      <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-gray-800 text-white rounded-lg shadow-2xl z-50 w-full max-w-2xl max-h-[90vh] flex flex-col">
+      <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-gray-800 text-white rounded-lg shadow-2xl z-50 w-[95vw] max-w-2xl max-h-[90vh] flex flex-col">
         {/* Header */}
         <div className="flex-shrink-0 flex justify-between items-center p-6 border-b border-gray-700 bg-gray-800">
           <h2 className="text-2xl font-playfair">File Upload Guide for Engraving</h2>

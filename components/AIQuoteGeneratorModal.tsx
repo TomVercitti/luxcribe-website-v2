@@ -22,7 +22,7 @@ const AIQuoteGeneratorModal: React.FC<AIQuoteGeneratorModalProps> = ({ isOpen, o
   return (
     <>
       <div className="fixed inset-0 bg-black bg-opacity-70 z-50" onClick={onClose} />
-      <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-gray-800 text-white rounded-lg shadow-2xl z-50 w-full max-w-lg max-h-[90vh] flex flex-col">
+      <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-gray-800 text-white rounded-lg shadow-2xl z-50 w-[95vw] max-w-lg max-h-[90vh] flex flex-col">
         <div className="flex-shrink-0 flex justify-between items-center p-6 border-b border-gray-700">
           <h2 className="text-2xl font-playfair">AI Idea Generator</h2>
           <button onClick={onClose} className="text-gray-400 hover:text-white">

@@ -101,7 +101,7 @@ const ProductDetailPage: React.FC = () => {
     <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-12">
       <div className="grid md:grid-cols-2 gap-12 items-start">
         {/* Image Gallery */}
-        <div className="sticky top-24">
+        <div className="md:sticky md:top-24">
           <div className="relative bg-gray-800 rounded-lg p-4">
             <img 
               src={selectedVariation.mockupImage || '/placeholder.png'} 

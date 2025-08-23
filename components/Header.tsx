@@ -21,11 +21,11 @@ const Header: React.FC = () => {
   return (
     <header className="bg-black bg-opacity-50 backdrop-blur-sm shadow-lg py-2 w-full z-40 sticky top-0">
       <nav className="container mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-32 md:h-40">
+        <div className="flex items-center justify-between h-24 md:h-32">
           <div className="flex items-center">
             <Link to="/" className="flex-shrink-0">
               <img 
-                className="h-24 md:h-32 w-auto object-contain" 
+                className="h-20 md:h-24 w-auto object-contain" 
                 src="https://raw.githubusercontent.com/TomVercitti/luxcribe-website/main/64_White%20Black%20Modern%20Initial%20Logo-Transparent.png" 
                 alt="Luxcribe Logo" 
               />

@@ -124,3 +124,12 @@
   text-shadow: 0px 1px 0px rgba(255, 255, 255, 0.8); /* Subtle top highlight to create depression */
   filter: drop-shadow(0px 1px 0px rgba(255, 255, 255, 0.8)) brightness(0.95);
 }
+
+/* Utility to hide scrollbars */
+.no-scrollbar::-webkit-scrollbar {
+    display: none;
+}
+.no-scrollbar {
+    -ms-overflow-style: none;  /* IE and Edge */
+    scrollbar-width: none;  /* Firefox */
+}
