@@ -44,9 +44,9 @@ const ShopifyConnectionStatus: React.FC = () => {
       setIsLoading(true);
       setError(null);
       
-      // Pre-flight check for placeholder values in config
-      if (SHOPIFY_STORE_DOMAIN.includes('YOUR_STORE_NAME') || SHOPIFY_STOREFRONT_ACCESS_TOKEN.includes('YOUR_STOREFRONT_API_ACCESS_TOKEN')) {
-        setError("Configuration needed: Your Shopify store details are missing. Please update the `config.ts` file with your store's domain and access token.");
+      // Pre-flight check for missing env vars
+      if (!SHOPIFY_STORE_DOMAIN || !SHOPIFY_STOREFRONT_ACCESS_TOKEN) {
+        setError("Configuration needed: Your Shopify store details are missing. Please set the SHOPIFY_STORE_DOMAIN and SHOPIFY_STOREFRONT_ACCESS_TOKEN environment variables in your Netlify deployment settings.");
         setIsLoading(false);
         return;
       }
@@ -68,7 +68,10 @@ const ShopifyConnectionStatus: React.FC = () => {
     getShopInfo();
   }, []);
 
-  const maskedToken = `${SHOPIFY_STOREFRONT_ACCESS_TOKEN.substring(0, 4)}...${SHOPIFY_STOREFRONT_ACCESS_TOKEN.substring(SHOPIFY_STOREFRONT_ACCESS_TOKEN.length - 4)}`;
+  const maskedToken = SHOPIFY_STOREFRONT_ACCESS_TOKEN 
+    ? `${SHOPIFY_STOREFRONT_ACCESS_TOKEN.substring(0, 4)}...${SHOPIFY_STOREFRONT_ACCESS_TOKEN.substring(SHOPIFY_STOREFRONT_ACCESS_TOKEN.length - 4)}`
+    : 'Not Set';
+
 
   return (
     <div className="mt-8 p-6 bg-gray-900 rounded-lg border border-gray-700">
@@ -91,11 +94,11 @@ const ShopifyConnectionStatus: React.FC = () => {
               
               {/* Step 1: Verify Config */}
               <div>
-                  <p className="font-bold">Step 1: Verify your credentials in <code className="text-sm bg-gray-700 p-1 rounded">config.ts</code></p>
-                  <p className="mt-2">Check for any typos or missing characters. These values must exactly match your Shopify details.</p>
+                  <p className="font-bold">Step 1: Verify your Environment Variables</p>
+                  <p className="mt-2">In your Netlify site settings under "Build &amp; deploy" &rarr; "Environment", ensure the following variables are set correctly. Check for any typos or missing characters.</p>
                   <div className="mt-2 space-y-1 text-sm bg-gray-800 p-3 rounded-md">
-                      <p><strong>Store Domain:</strong> <code className="text-yellow-300">{SHOPIFY_STORE_DOMAIN}</code></p>
-                      <p><strong>Access Token:</strong> <code className="text-yellow-300">{maskedToken}</code></p>
+                      <p><strong>SHOPIFY_STORE_DOMAIN:</strong> <code className="text-yellow-300">{SHOPIFY_STORE_DOMAIN || 'Not Set'}</code></p>
+                      <p><strong>SHOPIFY_STOREFRONT_ACCESS_TOKEN:</strong> <code className="text-yellow-300">{maskedToken}</code></p>
                   </div>
               </div>
 
