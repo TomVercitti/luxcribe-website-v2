@@ -90,7 +90,7 @@ const ShopPage: React.FC = () => {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
         {filteredProducts.map(product => {
           const liveProduct = liveProducts[product.id];
-          const imageUrl = liveProduct?.featuredImage?.url || product.variations[0].mockupImage || '/placeholder.png';
+          const imageUrl = liveProduct?.featuredImage?.url || product.featuredImage || product.variations[0]?.mockupImage || '/placeholder.png';
 
           return (
             <Link key={product.id} to={`/product/${product.id}`} className="group bg-gray-800 rounded-lg overflow-hidden shadow-lg hover:shadow-indigo-500/20 transition-all transform hover:-translate-y-1">

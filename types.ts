@@ -27,6 +27,7 @@ export interface Product {
   description: string;
   basePrice: number; // Used as a fallback if Shopify fetch fails
   variations: ProductVariation[];
+  featuredImage?: string; // The main image for the product, shown on collection pages
 }
 
 export interface PriceDetails {
