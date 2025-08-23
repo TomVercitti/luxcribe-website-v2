@@ -27,14 +27,14 @@ exports.handler = async function(event, context) {
     // Dynamic Image Engraving Pricing Model
     // ===================================================================================
     // Calculates a price based on the following logic:
-    // 1. A base fee is applied to every image.
+    // 1. A base fee is applied to every image. This is the minimum "house fee".
     // 2. A dynamic fee is added based on the image data size, which serves as a
     //    proxy for complexity.
     //
     // Formula: totalPrice = baseFee + ((dataSizeInKB / 10) * feePer10KB)
     // ===================================================================================
 
-    const BASE_FEE = 10.00; // A flat fee for any image engraving.
+    const BASE_FEE = 35.00; // A flat fee for any image engraving, serving as the minimum price.
     const FEE_PER_10KB = 2.00; // The fee for each 10 kilobyte block of data.
 
     const dataSizeInBytes = imageData.length;
