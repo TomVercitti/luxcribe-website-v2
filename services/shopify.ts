@@ -1,49 +1,62 @@
+import type { ShopifyCart, CartItem, ShopifyShop, ShopifyProduct } from '../types';
 import { SHOPIFY_STORE_DOMAIN, SHOPIFY_STOREFRONT_ACCESS_TOKEN } from '../config';
-import type { ShopifyCart, CartItem } from '../types';
 
-// The new API endpoint is our own serverless function. This resolves potential CORS issues,
-// hides the access token from client-side network requests, and works consistently in
-// both local development (with Netlify Dev) and production.
-const SHOPIFY_API_URL = '/.netlify/functions/shopify';
+/**
+ * A generic fetch helper for the Shopify Storefront API.
+ * This function is the single point of contact for all Shopify API requests.
+ */
+const storefrontApi = async <T>(
+    query: string,
+    variables: Record<string, any> = {},
+    customDomain?: string,
+    customToken?: string
+): Promise<T> => {
+    const domain = customDomain || SHOPIFY_STORE_DOMAIN;
+    const token = customToken || SHOPIFY_STOREFRONT_ACCESS_TOKEN;
 
-
-const storefrontApi = async <T>(query: string, variables: Record<string, any> = {}): Promise<T> => {
-    const response = await fetch(SHOPIFY_API_URL, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ query, variables }),
-    });
-    
-    const json = await response.json();
-
-    // Centralized error check: Shopify's GraphQL API almost always returns a 200 OK
-    // status but places errors in an `errors` array in the response body.
-    if (json.errors) {
-        const errorMessage = json.errors.map((e: any) => e.message).join(', ');
-        console.error("Shopify GraphQL Errors:", JSON.stringify(json.errors, null, 2));
-        // Provide more helpful, user-facing error messages for common issues.
-        if (errorMessage.toLowerCase().includes('access denied for storefrontaccesstoken')) {
-             throw new Error(`Shopify Auth Error: The Access Token is invalid or missing required permissions. Please check the server configuration.`);
-        }
-        if (errorMessage.toLowerCase().includes('merchandise')) {
-             throw new Error(`Shopify Error: The selected product variant is invalid. Please check the 'variantId' values in constants.ts.`);
-        }
-        throw new Error(`Shopify GraphQL Error: ${errorMessage}`);
+    if (!domain || domain.includes('your-store-name')) {
+        throw new Error("Shopify domain is not configured. Please update config.ts.");
+    }
+    if (!token || token.includes('your-storefront-access-token')) {
+        throw new Error("Shopify access token is not configured. Please update config.ts.");
     }
 
-    // This handles errors from our proxy function itself (e.g., missing env vars) or network failures.
-    if (!response.ok) {
-        console.error("Shopify Proxy Error:", { status: response.status, body: json });
-        if (json.error) {
-            throw new Error(`Server Error: ${json.error}`);
+    const shopifyApiUrl = `https://${domain}/api/2024-04/graphql.json`;
+
+    try {
+        const response = await fetch(shopifyApiUrl, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Shopify-Storefront-Access-Token': token,
+            },
+            body: JSON.stringify({ query, variables }),
+        });
+
+        const json = await response.json();
+
+        if (json.errors) {
+            const errorMessage = json.errors.map((e: any) => e.message).join(', ');
+            console.error("Shopify GraphQL Errors:", JSON.stringify(json.errors, null, 2));
+            if (errorMessage.toLowerCase().includes('access denied')) {
+                 throw new Error(`Shopify Auth Error: The Access Token is invalid or missing permissions. Please check your credentials in config.ts and Shopify admin settings.`);
+            }
+            if (errorMessage.toLowerCase().includes('merchandise')) {
+                 throw new Error(`Shopify Error: A selected product variant is invalid. Please check the 'variantId' values in constants.ts and ensure they exist in your Shopify store.`);
+            }
+            throw new Error(`Shopify GraphQL Error: ${errorMessage}`);
         }
-        throw new Error(`The API request failed with status ${response.status}.`);
+
+        if (!response.ok) {
+            console.error("Shopify API Error:", { status: response.status, body: json });
+            throw new Error(`The API request failed with status ${response.status}.`);
+        }
+        
+        return json.data;
+    } catch (error: any) {
+        console.error("Shopify API call failed:", error);
+        throw new Error(`Failed to communicate with Shopify. Check your network connection and the Shopify domain in config.ts. ${error.message}.`);
     }
-
-
-    return json.data;
 };
 
 const cartFragment = `
@@ -59,6 +72,10 @@ const cartFragment = `
             ... on ProductVariant {
               id
               title
+              image {
+                url
+                altText
+              }
               price {
                 amount
                 currencyCode
@@ -92,29 +109,23 @@ export const createCart = async (): Promise<ShopifyCart | null> => {
     const query = `
         mutation cartCreate($input: CartInput!) {
             cartCreate(input: $input) {
-                cart {
-                    ...CartFragment
-                }
+                cart { ...CartFragment }
             }
         }
         ${cartFragment}
     `;
-    const variables = { input: {} };
-    const data = await storefrontApi<{ cartCreate: { cart: ShopifyCart | null } }>(query, variables);
+    const data = await storefrontApi<{ cartCreate: { cart: ShopifyCart | null } }> (query, { input: {} });
     return data.cartCreate.cart;
 };
 
 export const fetchCart = async (cartId: string): Promise<ShopifyCart | null> => {
     const query = `
         query getCart($cartId: ID!) {
-            cart(id: $cartId) {
-                ...CartFragment
-            }
+            cart(id: $cartId) { ...CartFragment }
         }
         ${cartFragment}
     `;
-    const variables = { cartId };
-    const data = await storefrontApi<{ cart: ShopifyCart | null }>(query, variables);
+    const data = await storefrontApi<{ cart: ShopifyCart | null }>(query, { cartId });
     return data.cart;
 };
 
@@ -122,9 +133,7 @@ export const addLinesToCart = async (cartId: string, lines: CartItem[]): Promise
     const query = `
         mutation cartLinesAdd($cartId: ID!, $lines: [CartLineInput!]!) {
             cartLinesAdd(cartId: $cartId, lines: $lines) {
-                cart {
-                    ...CartFragment
-                }
+                cart { ...CartFragment }
             }
         }
         ${cartFragment}
@@ -134,9 +143,7 @@ export const addLinesToCart = async (cartId: string, lines: CartItem[]): Promise
         quantity: item.quantity,
         attributes: item.attributes,
     }));
-    const variables = { cartId, lines: shopifyLines };
-    const data = await storefrontApi<{ cartLinesAdd: { cart: ShopifyCart | null } }>(query, variables);
-    
+    const data = await storefrontApi<{ cartLinesAdd: { cart: ShopifyCart | null } }>(query, { cartId, lines: shopifyLines });
     return data.cartLinesAdd.cart;
 };
 
@@ -144,39 +151,67 @@ export const removeLinesFromCart = async (cartId: string, lineIds: string[]): Pr
     const query = `
         mutation cartLinesRemove($cartId: ID!, $lineIds: [ID!]!) {
             cartLinesRemove(cartId: $cartId, lineIds: $lineIds) {
-                cart {
-                    ...CartFragment
-                }
+                cart { ...CartFragment }
             }
         }
         ${cartFragment}
     `;
-    const variables = { cartId, lineIds };
-    const data = await storefrontApi<{ cartLinesRemove: { cart: ShopifyCart | null } }>(query, variables);
-
+    const data = await storefrontApi<{ cartLinesRemove: { cart: ShopifyCart | null } }>(query, { cartId, lineIds });
     return data.cartLinesRemove.cart;
 };
 
+export const fetchShopInfo = async (domain: string, token: string): Promise<ShopifyShop | null> => {
+    const query = `query getShopInfo { shop { name, description } }`;
+    const data = await storefrontApi<{ shop: ShopifyShop | null }>(query, {}, domain, token);
+    return data.shop;
+};
 
-export interface ShopifyShop {
-    name: string;
-    description: string;
-}
+// Fragment for product data, including variants and prices
+const productWithVariantsFragment = `
+  fragment ProductWithVariants on Product {
+    id
+    handle
+    title
+    featuredImage {
+      url
+      altText
+    }
+    variants(first: 25) {
+      edges {
+        node {
+          id
+          title
+          price {
+            amount
+            currencyCode
+          }
+          image {
+            url
+            altText
+          }
+        }
+      }
+    }
+  }
+`;
 
-export const fetchShopInfo = async (): Promise<ShopifyShop | null> => {
+export const fetchProductsByHandles = async (handles: string[]): Promise<ShopifyProduct[]> => {
+    const handlesQueryString = handles.map(h => `handle:'${h}'`).join(' OR ');
     const query = `
-        query getShopInfo {
-            shop {
-                name
-                description
+        query getProductsByHandles($query: String!) {
+            products(first: ${handles.length}, query: $query) {
+                edges {
+                    node {
+                        ...ProductWithVariants
+                    }
+                }
             }
         }
+        ${productWithVariantsFragment}
     `;
-    try {
-        const data = await storefrontApi<{ shop: ShopifyShop }>(query);
-        return data.shop;
-    } catch (error) {
-        console.error("Error fetching shop info:", error);
-        throw error; // Re-throw the error to be caught by the UI component
-    }
+    const data = await storefrontApi<{ products: { edges: { node: ShopifyProduct }[] } }>(
+        query,
+        { query: handlesQueryString }
+    );
+    return data.products.edges.map(edge => edge.node);
 };

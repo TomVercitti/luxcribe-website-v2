@@ -1,3 +1,6 @@
+// This function proxies requests to the Shopify Storefront API.
+// It relies exclusively on environment variables set in your deployment environment (e.g., Netlify).
+
 const SHOPIFY_STORE_DOMAIN = process.env.SHOPIFY_STORE_DOMAIN;
 const SHOPIFY_STOREFRONT_ACCESS_TOKEN = process.env.SHOPIFY_STOREFRONT_ACCESS_TOKEN;
 
@@ -14,10 +17,11 @@ exports.handler = async function(event) {
   }
   
   if (!SHOPIFY_API_URL || !SHOPIFY_STOREFRONT_ACCESS_TOKEN) {
-      console.error('Shopify environment variables are not set.');
+      const errorMessage = 'Shopify API credentials are not configured on the server. Please set the SHOPIFY_STORE_DOMAIN and SHOPIFY_STOREFRONT_ACCESS_TOKEN environment variables in your Netlify settings.';
+      console.error(errorMessage);
       return {
           statusCode: 500,
-          body: JSON.stringify({ error: 'Shopify API credentials are not configured on the server.' })
+          body: JSON.stringify({ error: errorMessage })
       };
   }
 

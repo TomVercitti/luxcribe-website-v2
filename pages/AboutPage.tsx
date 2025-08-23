@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
+import { useState } from 'react';
 import { fetchShopInfo } from '../services/shopify';
-import type { ShopifyShop } from '../services/shopify';
+import type { ShopifyShop } from '../types';
 import { Spinner } from '../components/icons';
 import { SHOPIFY_STORE_DOMAIN, SHOPIFY_STOREFRONT_ACCESS_TOKEN } from '../config';
 
@@ -34,111 +35,128 @@ const values = [
   }
 ];
 
-const ShopifyConnectionStatus: React.FC = () => {
+const ShopifyConnectionManager: React.FC = () => {
+  const [testStatus, setTestStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
   const [shopInfo, setShopInfo] = useState<ShopifyShop | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState<boolean>(true);
 
-  useEffect(() => {
-    const getShopInfo = async () => {
-      setIsLoading(true);
-      setError(null);
-      
-      // Pre-flight check for missing env vars
-      if (!SHOPIFY_STORE_DOMAIN || !SHOPIFY_STOREFRONT_ACCESS_TOKEN) {
-        setError("Configuration needed: Your Shopify store details are missing. Please set the SHOPIFY_STORE_DOMAIN and SHOPIFY_STOREFRONT_ACCESS_TOKEN environment variables in your Netlify deployment settings.");
-        setIsLoading(false);
-        return;
+  // Local state for the input fields, initialized from config.ts
+  const [localDomain, setLocalDomain] = useState(SHOPIFY_STORE_DOMAIN);
+  const [localToken, setLocalToken] = useState(SHOPIFY_STOREFRONT_ACCESS_TOKEN);
+
+  const handleTestConnection = async () => {
+    setTestStatus('loading');
+    setError(null);
+    setShopInfo(null);
+
+    try {
+      const info = await fetchShopInfo(localDomain, localToken);
+      if (info && info.name) {
+        setShopInfo(info);
+        setTestStatus('success');
+      } else {
+        setError("Connection was successful, but no shop data was returned. This may indicate an issue with your access token's permissions.");
+        setTestStatus('error');
       }
-
-      try {
-        const info = await fetchShopInfo();
-        if (info && info.name) {
-          setShopInfo(info);
-        } else {
-          // This case can happen with a valid token that has zero permissions.
-          setError("Could not retrieve shop information. The connection was successful but no data was returned. This often indicates your access token is missing the required 'unauthenticated_read_content' permission.");
-        }
-      } catch (e: any) {
-        setError(e.message || "An unknown error occurred while connecting to Shopify.");
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    getShopInfo();
-  }, []);
-
-  const maskedToken = SHOPIFY_STOREFRONT_ACCESS_TOKEN 
-    ? `${SHOPIFY_STOREFRONT_ACCESS_TOKEN.substring(0, 4)}...${SHOPIFY_STOREFRONT_ACCESS_TOKEN.substring(SHOPIFY_STOREFRONT_ACCESS_TOKEN.length - 4)}`
-    : 'Not Set';
-
+    } catch (e: any) {
+      setError(e.message || "An unknown error occurred while connecting to Shopify.");
+      setTestStatus('error');
+    }
+  };
 
   return (
     <div className="mt-8 p-6 bg-gray-900 rounded-lg border border-gray-700">
-      <h3 className="font-playfair text-xl text-indigo-400">Shopify Connection Status</h3>
-      {isLoading && (
-        <div className="flex items-center mt-2">
-          <Spinner className="w-6 h-6 mr-3" />
-          <p className="text-gray-300">Attempting to connect to your store...</p>
+      <h3 className="font-playfair text-xl text-indigo-400">Shopify Connection Manager</h3>
+      <p className="mt-2 text-sm text-gray-400">
+        This tool helps you verify your local development connection to Shopify. Your live site on Netlify uses environment variables instead.
+      </p>
+
+      {/* Interactive Inputs */}
+      <div className="mt-4 space-y-3 bg-gray-800 p-4 rounded-lg">
+        <div>
+          <label htmlFor="shopDomain" className="text-xs font-bold text-gray-400">Shopify Store Domain</label>
+          <input
+            id="shopDomain"
+            type="text"
+            value={localDomain}
+            onChange={(e) => setLocalDomain(e.target.value)}
+            placeholder="your-store-name.myshopify.com"
+            className="font-mono text-lg text-white bg-gray-700 p-2 rounded mt-1 break-all w-full border border-gray-600 focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+          />
         </div>
-      )}
-      {error && (
-        <div className="mt-4 p-4 bg-red-900/50 border border-red-500 rounded-lg text-red-300">
-          <p className="font-bold text-lg text-red-200">
-            {error.startsWith('Configuration needed') ? 'Action Required' : 'Connection Failed'}
-          </p>
-          <p className="mt-2 text-gray-300 font-mono bg-gray-800 p-2 rounded text-sm">{error}</p>
+        <div>
+          <label htmlFor="accessToken" className="text-xs font-bold text-gray-400">Storefront Access Token</label>
+          <input
+            id="accessToken"
+            type="password"
+            value={localToken}
+            onChange={(e) => setLocalToken(e.target.value)}
+            placeholder="your-storefront-access-token"
+            className="font-mono text-lg text-white bg-gray-700 p-2 rounded mt-1 break-all w-full border border-gray-600 focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+          />
+        </div>
+      </div>
 
-          <div className="mt-4 text-gray-300 space-y-6">
-              <h4 className="text-lg font-bold text-white">Troubleshooting Guide</h4>
-              
-              {/* Step 1: Verify Config */}
-              <div>
-                  <p className="font-bold">Step 1: Verify your Environment Variables</p>
-                  <p className="mt-2">In your Netlify site settings under "Build &amp; deploy" &rarr; "Environment", ensure the following variables are set correctly. Check for any typos or missing characters.</p>
-                  <div className="mt-2 space-y-1 text-sm bg-gray-800 p-3 rounded-md">
-                      <p><strong>SHOPIFY_STORE_DOMAIN:</strong> <code className="text-yellow-300">{SHOPIFY_STORE_DOMAIN || 'Not Set'}</code></p>
-                      <p><strong>SHOPIFY_STOREFRONT_ACCESS_TOKEN:</strong> <code className="text-yellow-300">{maskedToken}</code></p>
-                  </div>
-              </div>
+      <button
+        onClick={handleTestConnection}
+        disabled={testStatus === 'loading'}
+        className="mt-4 w-full flex justify-center items-center py-3 px-4 border border-transparent rounded-md shadow-sm text-lg font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-900 focus:ring-indigo-500 disabled:bg-gray-600"
+      >
+        {testStatus === 'loading' ? <Spinner className="w-6 h-6" /> : 'Test Connection'}
+      </button>
 
-              {/* Step 2: Check Permissions */}
-              <div>
-                  <p className="font-bold">Step 2: Check your Storefront API permissions</p>
-                  <p className="mt-2">This is the most common cause of errors. Your access token must have the correct permissions (called "scopes") to function.</p>
-                  <ol className="list-decimal list-inside mt-2 space-y-2">
-                      <li>In your Shopify Admin, go to: <br/> <strong className="text-white">Apps and sales channels &rarr; Develop apps &rarr; (Your App Name)</strong>.</li>
-                      <li>Click on the <strong className="text-white">API credentials</strong> tab.</li>
-                      <li>Scroll down to <strong className="text-white">Storefront API access scopes</strong> and ensure AT LEAST the following are checked:
-                          <ul className="list-disc list-inside mt-2 ml-4 p-3 bg-gray-800 rounded-md text-yellow-300 font-mono text-sm space-y-1">
-                              <li>unauthenticated_read_product_listings</li>
-                              <li>unauthenticated_read_checkouts</li>
-                              <li>unauthenticated_write_checkouts</li>
-                              <li>unauthenticated_read_content</li>
-                          </ul>
-                      </li>
-                      <li>If you made changes, be sure to click <strong className="text-white">"Save"</strong>.</li>
-                  </ol>
-              </div>
-
-               {/* Step 3: Final Checks */}
-              <div>
-                  <p className="font-bold">Step 3: Final Checks</p>
-                   <ul className="list-disc list-inside mt-2 space-y-1">
-                      <li>Ensure your Store Domain is the <code className="text-sm bg-gray-700 p-1 rounded">.myshopify.com</code> URL, not a custom domain.</li>
-                      <li>If issues persist, try creating a new private app and a new Storefront Access Token in Shopify to rule out a corrupted token.</li>
-                   </ul>
-              </div>
-
+      {/* Status Display */}
+      <div className="mt-4 min-h-[80px]">
+        {testStatus === 'success' && shopInfo && (
+           <div className="p-4 bg-green-900/50 border border-green-500 rounded-lg text-green-300">
+            <p className="font-bold text-lg text-green-200">Connection Successful!</p>
+            <p className="mt-2">Successfully connected to Shopify store: <span className="font-semibold text-white">{shopInfo.name}</span></p>
           </div>
-        </div>
-      )}
-      {shopInfo && (
-         <div className="mt-4 p-4 bg-green-900/50 border border-green-500 rounded-lg text-green-300">
-          <p className="font-bold text-lg text-green-200">Connection Successful!</p>
-          <p className="mt-2">Successfully connected to Shopify store: <span className="font-semibold text-white">{shopInfo.name}</span></p>
-        </div>
-      )}
+        )}
+        {testStatus === 'error' && error && (
+          <div className="p-4 bg-red-900/50 border border-red-500 rounded-lg text-red-300">
+            <p className="font-bold text-lg text-red-200">Connection Failed</p>
+            <p className="mt-2 text-sm">{error}</p>
+          </div>
+        )}
+      </div>
+
+      {/* Troubleshooting Guide */}
+      <div className="mt-6 text-gray-300 space-y-6">
+          <h4 className="text-lg font-bold text-white">Troubleshooting Guide</h4>
+          
+          <div>
+              <p className="font-bold">Step 1: Test Your Credentials</p>
+              <p className="mt-2">
+                Enter your Shopify Store Domain and Storefront Access Token into the fields above and click the "Test Connection" button.
+              </p>
+          </div>
+
+           <div>
+              <p className="font-bold">Step 2: Make It Permanent (for Local Development)</p>
+              <p className="mt-2">
+                Once the test is successful, open the <code className="bg-gray-700 p-1 rounded text-xs">config.ts</code> file in your project and replace the placeholder values with the credentials you just tested. This will save them for your next session.
+              </p>
+          </div>
+          
+          <div>
+              <p className="font-bold">Step 3: Check API Permissions</p>
+              <p className="mt-2">If the test fails, the problem is likely your access token permissions.</p>
+              <ol className="list-decimal list-inside mt-2 space-y-2">
+                  <li>In Shopify Admin, go to: <br/> <strong className="text-white">Apps and sales channels &rarr; Develop apps &rarr; (Your App Name)</strong>.</li>
+                  <li>Go to the <strong className="text-white">API credentials</strong> tab.</li>
+                  <li>Under <strong className="text-white">Storefront API access scopes</strong>, ensure at least these are checked:
+                      <ul className="list-disc list-inside mt-2 ml-4 p-3 bg-gray-800 rounded-md text-yellow-300 font-mono text-sm space-y-1">
+                          <li>unauthenticated_read_product_listings</li>
+                          <li>unauthenticated_read_checkouts</li>
+                          <li>unauthenticated_write_checkouts</li>
+                          <li>unauthenticated_read_content</li>
+                      </ul>
+                  </li>
+                  <li>Click <strong className="text-white">Save</strong>.</li>
+              </ol>
+          </div>
+      </div>
     </div>
   );
 };
@@ -175,7 +193,7 @@ const AboutPage: React.FC = () => {
               </p>
 
               {/* Shopify Connection Test Box */}
-              <ShopifyConnectionStatus />
+              <ShopifyConnectionManager />
 
             </div>
             <div>

@@ -5,8 +5,8 @@ import type { Product, PageContent } from './types';
 
 export const TEXT_ENGRAVING_TIERS = [
   { min: 1, max: 5, price: 25.00, variantId: 'gid://shopify/ProductVariant/46968651546869' },
-  { min: 6, max: 10, price: 30.00, variantId: 'gid://shopify/ProductVariant/46968711971061' },
-  { min: 11, max: 20, price: 40.00, variantId: 'gid://shopify/ProductVariant/46968707907829' },
+  { min: 6, max: 10, price: 30.00, variantId: 'gid://shopify/ProductVariant/46968707907829' },
+  { min: 11, max: 20, price: 40.00, variantId: 'gid://shopify/ProductVariant/46968711971061' },
   { min: 21, max: 30, price: 50.00, variantId: 'gid://shopify/ProductVariant/46968712954101' },
   { min: 31, max: 50, price: 60.00, variantId: 'gid://shopify/ProductVariant/46968714100981' },
 ];
@@ -145,13 +145,13 @@ export const IMAGE_FEE_PRODUCT_VARIANT_ID = 'gid://shopify/ProductVariant/469686
 
 
 export const productCatalog: { [key: string]: Product } = {
-  // Home Decor
+  // Drinkware & Barware
   'slate-coasters': {
     id: 'slate-coasters',
     name: 'Slate Coasters',
-    category: 'Home Decor',
+    category: 'Drinkware & Barware',
     description: 'Natural slate coasters, perfect for protecting surfaces with a rustic, elegant touch. Personalize them with a logo, monogram, or custom design. Each coaster has padded feet to prevent scratching.',
-    basePrice: 12.00,
+    basePrice: 14.99, // This is a FALLBACK price. The actual price is fetched live from Shopify.
     variations: [
       { 
         id: 'slate-coaster-hexagon', 
@@ -187,7 +187,6 @@ export const productCatalog: { [key: string]: Product } = {
       }
     ]
   },
-  // Drinkware & Barware
   /*
   'tumbler': {
     id: 'tumbler',
@@ -226,51 +225,50 @@ export const productCatalog: { [key: string]: Product } = {
   },
   */
   // Keychains & Accessories
-  'leather-key-pouch': {
-  id: 'leather-key-pouch',
-  name: 'Leather Key Organizer',
-  category: 'Keychains & Accessories',
-  description: 'A smart and stylish leather pouch to keep your keys organized and protected. Personalize it with your initials, a name, or a small logo.',
-  basePrice: 13.56,
-  variations: [
-    { 
-      id: 'leather-key-pouch-black', 
-      name: 'Black Leather',
-      colorHex: '#2f2f2f',
-      material: 'leather',
-      mockupImage: 'https://cdn.shopify.com/s/files/1/0762/2433/2021/files/Saccd85451d5a4e13a3c08b983eb1e92e6.webp?v=1755435098',
-      variantId: 'gid://shopify/ProductVariant/46958815281397',
-      engravingZones: [{ id: 'front', name: 'Front', bounds: { x: 250, y: 300, width: 300, height: 150 } }] 
-    },
-    { 
-      id: 'leather-key-pouch-brown', 
-      name: 'Brown Leather',
-      colorHex: '#8b4513',
-      material: 'leather',
-      mockupImage: 'https://cdn.shopify.com/s/files/1/0762/2433/2021/files/S9e94de1e9a794829a6523d0d1f47408fg.webp?v=1755435098',
-      variantId: 'gid://shopify/ProductVariant/46958815314165',
-      engravingZones: [{ id: 'front', name: 'Front', bounds: { x: 250, y: 300, width: 300, height: 150 } }] 
-    },
-    { 
-      id: 'leather-key-pouch-blue', 
-      name: 'Blue Leather',
-      colorHex: '#0d2d4e',
-      material: 'leather',
-      mockupImage: 'https://cdn.shopify.com/s/files/1/0762/2433/2021/files/Sf177634ae202406fae7158ffd2c5d407n.webp?v=1755435097',
-      variantId: 'gid://shopify/ProductVariant/46958815248629',
-      engravingZones: [{ id: 'front', name: 'Front', bounds: { x: 250, y: 300, width: 300, height: 150 } }] 
-    },
-    { 
-      id: 'leather-key-pouch-red', 
-      name: 'Red Leather',
-      colorHex: '#a02c2c',
-      material: 'leather',
-      mockupImage: 'https://cdn.shopify.com/s/files/1/0762/2433/2021/files/S50b87f31fd2c41578320161d35d492709.webp?v=1755435098',
-      variantId: 'gid://shopify/ProductVariant/46958815346933',
-      engravingZones: [{ id: 'front', name: 'Front', bounds: { x: 250, y: 300, width: 300, height: 150 } }] 
-    }
-  ]
-
+  'leather-key-organizer': {
+    id: 'leather-key-organizer',
+    name: 'Leather Key Organizer',
+    category: 'Keychains & Accessories',
+    description: 'A smart and stylish leather keychain to keep your keys organized and protected. Personalize it with your initials, a name, or a small logo.',
+    basePrice: 27.99, // This is a FALLBACK price. The actual price is fetched live from Shopify.
+    variations: [
+      { 
+        id: 'leather-key-organizer-black', 
+        name: 'Black Leather',
+        colorHex: '#2f2f2f',
+        material: 'leather',
+        mockupImage: 'https://cdn.shopify.com/s/files/1/0762/2433/2021/files/Saccd85451d5a4e13a3c08b983eb1e92e6.webp?v=1755435098',
+        variantId: 'gid://shopify/ProductVariant/46958815281397',
+        engravingZones: [{ id: 'front', name: 'Front', bounds: { x: 250, y: 300, width: 300, height: 150 } }] 
+      },
+      { 
+        id: 'leather-key-organizer-brown', 
+        name: 'Brown Leather',
+        colorHex: '#8b4513',
+        material: 'leather',
+        mockupImage: 'https://cdn.shopify.com/s/files/1/0762/2433/2021/files/S9e94de1e9a794829a6523d0d1f47408fg.webp?v=1755435098',
+        variantId: 'gid://shopify/ProductVariant/46958815314165',
+        engravingZones: [{ id: 'front', name: 'Front', bounds: { x: 250, y: 300, width: 300, height: 150 } }] 
+      },
+      { 
+        id: 'leather-key-organizer-blue', 
+        name: 'Blue Leather',
+        colorHex: '#0d2d4e',
+        material: 'leather',
+        mockupImage: 'https://cdn.shopify.com/s/files/1/0762/2433/2021/files/Sf177634ae202406fae7158ffd2c5d407n.webp?v=1755435097',
+        variantId: 'gid://shopify/ProductVariant/46958815248629',
+        engravingZones: [{ id: 'front', name: 'Front', bounds: { x: 250, y: 300, width: 300, height: 150 } }] 
+      },
+      { 
+        id: 'leather-key-organizer-red', 
+        name: 'Red Leather',
+        colorHex: '#a02c2c',
+        material: 'leather',
+        mockupImage: 'https://cdn.shopify.com/s/files/1/0762/2433/2021/files/S50b87f31fd2c41578320161d35d492709.webp?v=1755435098',
+        variantId: 'gid://shopify/ProductVariant/46958815346933',
+        engravingZones: [{ id: 'front', name: 'Front', bounds: { x: 250, y: 300, width: 300, height: 150 } }] 
+      }
+    ]
   },
   /*
   // Photo Frames & Albums

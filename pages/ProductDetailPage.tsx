@@ -1,8 +1,10 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { productCatalog } from '../constants';
 import { useCart } from '../context/CartContext';
 import { Spinner } from '../components/icons';
+import { fetchProductsByHandles } from '../services/shopify';
+import type { ShopifyProduct } from '../types';
 
 /**
  * Checks if a Shopify Variant GID is a placeholder used for demonstration.
@@ -21,16 +23,45 @@ const ProductDetailPage: React.FC = () => {
   
   const { addToCart, initializationError } = useCart();
   const [isAddingToCart, setIsAddingToCart] = useState(false);
+  const [shopifyProduct, setShopifyProduct] = useState<ShopifyProduct | null>(null);
+  const [isLoadingPrice, setIsLoadingPrice] = useState(true);
 
   const [selectedVariationId, setSelectedVariationId] = useState<string | null>(
     product?.variations[0].id || null
   );
+
+  useEffect(() => {
+    if (productId) {
+      const fetchPrice = async () => {
+        setIsLoadingPrice(true);
+        try {
+          const results = await fetchProductsByHandles([productId]);
+          if (results.length > 0) {
+            setShopifyProduct(results[0]);
+          }
+        } catch (error) {
+          console.error("Failed to fetch Shopify product:", error);
+        } finally {
+          setIsLoadingPrice(false);
+        }
+      };
+      fetchPrice();
+    }
+  }, [productId]);
 
   const selectedVariation = useMemo(() => 
     product?.variations.find(v => v.id === selectedVariationId),
     [product, selectedVariationId]
   );
   
+  const priceMap = useMemo(() => {
+    if (!shopifyProduct) return new Map<string, string>();
+    return shopifyProduct.variants.edges.reduce((map, edge) => {
+        map.set(edge.node.id, parseFloat(edge.node.price.amount).toFixed(2));
+        return map;
+    }, new Map<string, string>());
+  }, [shopifyProduct]);
+
   const handleAddToCart = async () => {
     if (!selectedVariation || isNotConfigured || initializationError) return;
 
@@ -41,7 +72,6 @@ const ProductDetailPage: React.FC = () => {
             quantity: 1,
             attributes: [], // No customization
         }]);
-        // Cart sidebar will open from context
     } catch (error) {
         console.error("Failed to add to cart:", error);
         // In a real app, you might show a notification to the user here.
@@ -49,6 +79,16 @@ const ProductDetailPage: React.FC = () => {
         setIsAddingToCart(false);
     }
   };
+
+  const displayedImage = useMemo(() => {
+    if (!selectedVariation) return '/placeholder.png';
+
+    const liveVariant = shopifyProduct?.variants.edges.find(e => e.node.id === selectedVariation.variantId)?.node;
+    const variantImageUrl = liveVariant?.image?.url;
+    const productImageUrl = shopifyProduct?.featuredImage?.url;
+    
+    return variantImageUrl || productImageUrl || selectedVariation.mockupImage || '/placeholder.png';
+  }, [selectedVariation, shopifyProduct]);
 
   if (!product || !selectedVariation) {
     return (
@@ -63,7 +103,9 @@ const ProductDetailPage: React.FC = () => {
 
   const isNotConfigured = isPlaceholderVariantId(selectedVariation.variantId);
   const hasMultipleVariations = product.variations.length > 1;
-  const isCtaDisabled = isNotConfigured || !!initializationError;
+  const isCtaDisabled = isNotConfigured || !!initializationError || isLoadingPrice;
+  const currentPrice = priceMap.get(selectedVariation.variantId) || product.basePrice.toFixed(2);
+
 
   return (
     <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-12">
@@ -72,7 +114,7 @@ const ProductDetailPage: React.FC = () => {
         <div className="sticky top-24">
           <div className="relative bg-gray-800 rounded-lg p-4">
             <img 
-              src={selectedVariation.mockupImage} 
+              src={displayedImage} 
               alt={`${product.name} - ${selectedVariation.name}`}
               className="w-full h-auto object-contain rounded-lg"
             />
@@ -82,7 +124,13 @@ const ProductDetailPage: React.FC = () => {
         {/* Product Info */}
         <div>
           <h1 className="text-3xl md:text-4xl font-playfair mb-2">{product.name}</h1>
-          <p className="text-2xl font-semibold text-indigo-400 mb-4">${product.basePrice.toFixed(2)}</p>
+          <div className="text-2xl font-semibold text-indigo-400 mb-4 h-9">
+            {isLoadingPrice ? (
+                <div className="h-8 w-24 bg-gray-700 rounded animate-pulse"></div>
+            ) : (
+                `$${currentPrice}`
+            )}
+          </div>
           <p className="text-gray-300 leading-relaxed mb-6">{product.description}</p>
 
           {/* Variations */}
@@ -100,7 +148,7 @@ const ProductDetailPage: React.FC = () => {
                     aria-label={`Select ${variation.name}`}
                   >
                     {variation.colorHex ? (
-                      <div style={{ backgroundColor: variation.colorHex }} className="w-8 h-8 rounded-full border border-gray-600"></div>
+                      <div style={{ backgroundColor: variation.colorHex || '#808080' }} className="w-8 h-8 rounded-full border border-gray-600"></div>
                     ) : (
                       <span className={`block px-4 py-1.5 rounded-full text-sm ${selectedVariationId === variation.id ? 'bg-indigo-600 text-white' : 'bg-gray-700 text-gray-200'}`}>{variation.name}</span>
                     )}

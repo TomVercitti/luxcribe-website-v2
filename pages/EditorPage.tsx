@@ -2,8 +2,9 @@ import React, { useEffect, useRef, useState, useMemo, useCallback } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { productCatalog, IMAGE_FEE_PRODUCT_VARIANT_ID, TEXT_ENGRAVING_TIERS } from '../constants';
 import { useCart } from '../context/CartContext';
-import type { PriceDetails, EngravingZone, CartItem } from '../types';
+import type { PriceDetails, EngravingZone, CartItem, ShopifyProduct } from '../types';
 import { getStyleForMaterial } from '../styles/materialStyles';
+import { fetchProductsByHandles } from '../services/shopify';
 
 // Import new and existing components
 import EditorToolbar from '../components/EditorToolbar';
@@ -20,6 +21,27 @@ type CanvasState = {
     history: string[];
     historyIndex: number;
 }
+
+/**
+ * Calculates the engraving price for an image based on its data size.
+ * This serves as a proxy for complexity.
+ * @param imageData - The base64 or SVG string of the image.
+ * @returns The calculated price as a number.
+ */
+const calculateImagePrice = (imageData: string): number => {
+    const BASE_FEE = 35.00; // A flat fee for any image engraving, serving as the minimum price.
+    const FEE_PER_10KB = 2.00; // The fee for each 10 kilobyte block of data.
+
+    const dataSizeInBytes = imageData.length;
+    const dataSizeInKB = dataSizeInBytes / 1024;
+    
+    const dynamicFee = (dataSizeInKB / 10) * FEE_PER_10KB;
+    const totalPrice = BASE_FEE + dynamicFee;
+    
+    // Round to two decimal places to represent currency.
+    return Math.round(totalPrice * 100) / 100;
+};
+
 
 /**
  * Checks if a Shopify Variant GID is a placeholder used for demonstration.
@@ -52,6 +74,9 @@ const EditorPage: React.FC = () => {
     const [activeZoneId, setActiveZoneId] = useState<string | null>(zoneId || null);
 
     const [isQuoteModalOpen, setIsQuoteModalOpen] = useState(false);
+    const [shopifyProduct, setShopifyProduct] = useState<ShopifyProduct | null>(null);
+    const [isLoadingPrice, setIsLoadingPrice] = useState(true);
+
 
     const isRestoringState = useRef(false);
 
@@ -66,6 +91,35 @@ const EditorPage: React.FC = () => {
         return { product, variation, initialZone };
     }, [productId, variationId, zoneId]);
     
+    useEffect(() => {
+        if (productId) {
+            const fetchPrice = async () => {
+                setIsLoadingPrice(true);
+                try {
+                    const results = await fetchProductsByHandles([productId]);
+                    if (results.length > 0) {
+                        setShopifyProduct(results[0]);
+                    }
+                } catch (error) {
+                    console.error("Failed to fetch Shopify product:", error);
+                } finally {
+                    setIsLoadingPrice(false);
+                }
+            };
+            fetchPrice();
+        }
+    }, [productId]);
+    
+    const displayedImage = useMemo(() => {
+        if (!productData) return '/placeholder.png';
+
+        const liveVariant = shopifyProduct?.variants.edges.find(e => e.node.id === productData.variation.variantId)?.node;
+        const variantImageUrl = liveVariant?.image?.url;
+        const productImageUrl = shopifyProduct?.featuredImage?.url;
+        
+        return variantImageUrl || productImageUrl || productData.variation.mockupImage || '/placeholder.png';
+    }, [productData, shopifyProduct]);
+
     const isNotConfigured = useMemo(() => {
       if (!productData) return false;
       // Check the main product, all text tiers, and the image fee product for placeholder IDs.
@@ -74,7 +128,7 @@ const EditorPage: React.FC = () => {
              isPlaceholderVariantId(IMAGE_FEE_PRODUCT_VARIANT_ID);
     }, [productData]);
 
-    const isCtaDisabled = isNotConfigured || !!initializationError || isPricingImage;
+    const isCtaDisabled = isNotConfigured || !!initializationError || isPricingImage || isLoadingPrice;
 
     const materialStyle = useMemo(() => 
         getStyleForMaterial(window.fabric, productData?.variation.material || 'default'),
@@ -95,12 +149,20 @@ const EditorPage: React.FC = () => {
             });
             setZoneStates(initialStates);
             setActiveZoneId(productData.initialZone.id);
-            
-            // Set the initial price as soon as product data is available
-            const base = productData.product.basePrice;
-            setPriceDetails({ base, text: 0, images: 0, total: base, characterCount: 0 });
         }
     }, [productData]);
+
+    // Effect to set the price once both local data and Shopify data are available
+    useEffect(() => {
+        if (productData && !isLoadingPrice) {
+            let basePrice = productData.product.basePrice; // Fallback
+            const liveVariant = shopifyProduct?.variants.edges.find(e => e.node.id === productData.variation.variantId);
+            if (liveVariant) {
+                basePrice = parseFloat(liveVariant.node.price.amount);
+            }
+            setPriceDetails(prev => ({ ...prev, base: basePrice, total: basePrice + prev.text + prev.images }));
+        }
+    }, [productData, shopifyProduct, isLoadingPrice]);
     
     const updateHistory = useCallback((canvas: any) => {
         if (isRestoringState.current || !activeZoneId) return;
@@ -179,9 +241,13 @@ const EditorPage: React.FC = () => {
             }
         }
 
-        const base = productData.product.basePrice;
-        const total = base + textFee + totalImageFee;
-        setPriceDetails({ base, text: textFee, images: totalImageFee, total, characterCount: totalCharacterCount });
+        setPriceDetails(prev => ({
+            ...prev,
+            text: textFee,
+            images: totalImageFee,
+            total: prev.base + textFee + totalImageFee,
+            characterCount: totalCharacterCount
+        }));
         
     }, [productData, zoneStates, activeZoneId]);
 
@@ -264,7 +330,7 @@ const EditorPage: React.FC = () => {
         window.fabric.Object.prototype.controls.mtr.cursorStyle = 'grab';
 
         const setBackgroundImage = () => {
-          window.fabric.Image.fromURL(productData.variation.mockupImage, (img: any) => {
+          window.fabric.Image.fromURL(displayedImage, (img: any) => {
               if (img) {
                   const canvasWidth = canvas.getWidth();
                   const canvasHeight = canvas.getHeight();
@@ -282,7 +348,7 @@ const EditorPage: React.FC = () => {
                       top: (canvasHeight - imgHeight * scale) / 2
                   });
               } else {
-                  console.error("Failed to load background image:", productData.variation.mockupImage);
+                  console.error("Failed to load background image:", displayedImage);
               }
           });
         };
@@ -345,7 +411,7 @@ const EditorPage: React.FC = () => {
             window.removeEventListener('resize', handleResize);
             canvas.dispose();
         };
-    }, [productData, updateLayersAndPrice, updateHistory]);
+    }, [productData, displayedImage, updateLayersAndPrice, updateHistory]);
     
     // Effect to load zone data when active zone changes
     useEffect(() => {
@@ -455,25 +521,12 @@ const EditorPage: React.FC = () => {
     const priceAndAddImage = async (imageData: string, type: 'svg' | 'png') => {
         setIsPricingImage(true);
         showNotification("Calculating engraving price for image...");
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+
+        // Use a short timeout to simulate an async operation and allow UI to update
+        await new Promise(resolve => setTimeout(resolve, 100));
 
         try {
-            const response = await fetch('/.netlify/functions/image-pricing', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ imageData }),
-                signal: controller.signal,
-            });
-
-            clearTimeout(timeoutId);
-
-            if (!response.ok) {
-                const errorBody = await response.json().catch(() => ({ error: 'Could not parse error response.' }));
-                throw new Error(errorBody.error || `Failed to get pricing from server. Status: ${response.status}`);
-            }
-
-            const { price } = await response.json();
+            const price = calculateImagePrice(imageData);
 
             const createObject = (callback: (obj: any) => void) => {
                 if (type === 'svg') {
@@ -497,13 +550,8 @@ const EditorPage: React.FC = () => {
             });
 
         } catch (error: any) {
-             if (error.name === 'AbortError') {
-                console.error("Image pricing request timed out.");
-                showNotification("Error: The request took too long. The file might be too complex.");
-            } else {
-                console.error("Image pricing error:", error);
-                showNotification(`Error: ${error.message || "Could not calculate image price. Please try again."}`);
-            }
+            console.error("Image processing error:", error);
+            showNotification(`Error: ${error.message || "Could not process the image."}`);
         } finally {
             setIsPricingImage(false);
         }
@@ -719,6 +767,23 @@ const EditorPage: React.FC = () => {
              showNotification(`Error: Character count of ${totalCharacterCount} exceeds the maximum of ${maxTier.max}.`);
              return;
         }
+        
+        // Find names of zones that have user-added content
+        const customizedZoneNames = Object.keys(updatedZoneStates).filter(zoneId => {
+            try {
+                const state = updatedZoneStates[zoneId];
+                if (!state.json) return false;
+                const parsed = JSON.parse(state.json);
+                // Check if there are any objects that were added by the user
+                return parsed.objects && parsed.objects.some((obj: any) => obj.data?.userAdded);
+            } catch {
+                return false;
+            }
+        }).map(zoneId => {
+            // Find the zone object to get its name
+            const zoneInfo = productData.variation.engravingZones.find(z => z.id === zoneId);
+            return zoneInfo ? zoneInfo.name : null;
+        }).filter(Boolean); // Filter out any nulls if a zone wasn't found
 
         const linesToAdd: CartItem[] = [];
         const uniqueBundleId = `luxcribe-${Date.now()}`;
@@ -728,7 +793,8 @@ const EditorPage: React.FC = () => {
             merchandiseId: productData.variation.variantId,
             quantity: 1,
             attributes: [
-                { key: "_customizationImage", value: productData.variation.mockupImage },
+                { key: "_customizationImage", value: displayedImage },
+                { key: "_customizedZones", value: customizedZoneNames.join(', ') || 'General' },
                 { key: "Total Price", value: `$${priceDetails.total.toFixed(2)}`},
                 { key: "_Design: Main", value: JSON.stringify(updatedZoneStates[productData.initialZone.id]?.json || '{}') }, // Save at least one zone's design
                 { key: "_customizationBundleId", value: uniqueBundleId },
@@ -868,7 +934,15 @@ const EditorPage: React.FC = () => {
                   <LayersPanel layers={layers} onSelectLayer={selectLayer} onDeleteLayer={deleteLayer} activeObject={activeObject} />
 
                   <div className="mt-8">
-                    <PricingBreakdown priceDetails={priceDetails} />
+                    {isLoadingPrice ? (
+                        <div className="space-y-2">
+                            <div className="h-6 bg-gray-700 rounded w-full animate-pulse"></div>
+                            <div className="h-6 bg-gray-700 rounded w-3/4 animate-pulse"></div>
+                            <div className="h-8 bg-gray-700 rounded w-1/2 animate-pulse mt-4"></div>
+                        </div>
+                    ) : (
+                        <PricingBreakdown priceDetails={priceDetails} />
+                    )}
                   </div>
 
                   {initializationError && (
@@ -899,8 +973,8 @@ const EditorPage: React.FC = () => {
                         className="w-full p-3 rounded-lg text-lg font-bold flex items-center justify-center gap-2 transition-colors disabled:bg-gray-600 disabled:text-gray-400 disabled:cursor-not-allowed bg-indigo-600 hover:bg-indigo-700"
                         disabled={isCtaDisabled}
                     >
-                        {isPricingImage ? <Spinner className="w-6 h-6"/> : <CartIcon className="w-6 h-6"/>}
-                        {isPricingImage ? 'Pricing Image...' : 'Add to Cart'}
+                        {isPricingImage || isLoadingPrice ? <Spinner className="w-6 h-6"/> : <CartIcon className="w-6 h-6"/>}
+                        {isPricingImage ? 'Pricing Image...' : (isLoadingPrice ? 'Loading...' : 'Add to Cart')}
                     </button>
                  </div>
             </aside>

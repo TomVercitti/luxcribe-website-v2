@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { fetchShopInfo } from '../services/shopify';
+import { SHOPIFY_STORE_DOMAIN, SHOPIFY_STOREFRONT_ACCESS_TOKEN } from '../config';
 
 const ShopifyStatusIndicator: React.FC = () => {
   const [status, setStatus] = useState<'loading' | 'success' | 'error'>('loading');
@@ -8,7 +9,7 @@ const ShopifyStatusIndicator: React.FC = () => {
   useEffect(() => {
     const checkStatus = async () => {
       try {
-        const info = await fetchShopInfo();
+        const info = await fetchShopInfo(SHOPIFY_STORE_DOMAIN, SHOPIFY_STOREFRONT_ACCESS_TOKEN);
         if (info && info.name) {
           setStatus('success');
         } else {

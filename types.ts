@@ -25,7 +25,7 @@ export interface Product {
   name: string; // e.g., "Stainless Steel Tumbler"
   category: string; // e.g., "Drinkware & Barware"
   description: string;
-  basePrice: number;
+  basePrice: number; // Used as a fallback if Shopify fetch fails
   variations: ProductVariation[];
 }
 
@@ -81,6 +81,10 @@ export interface ShopifyCartLine {
   merchandise: {
     id: string;
     title: string;
+    image?: {
+      url: string;
+      altText: string | null;
+    };
     price: {
       amount: string;
       currencyCode: string;
@@ -93,6 +97,42 @@ export interface ShopifyCartLine {
     key: string;
     value: string;
   }[];
+}
+
+export interface ShopifyShop {
+  name: string;
+  description: string | null;
+}
+
+// Types for LIVE product data fetched from Shopify
+export interface ShopifyPrice {
+  amount: string;
+  currencyCode: string;
+}
+
+export interface ShopifyVariant {
+  id: string; // This is the GID
+  title: string;
+  price: ShopifyPrice;
+  image?: {
+    url: string;
+    altText: string | null;
+  };
+}
+
+export interface ShopifyProduct {
+  id: string;
+  handle: string;
+  title: string;
+  featuredImage?: {
+    url: string;
+    altText: string | null;
+  };
+  variants: {
+    edges: {
+      node: ShopifyVariant;
+    }[];
+  };
 }
 
 

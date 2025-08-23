@@ -1,20 +1,37 @@
-// IMPORTANT: You must set these values as environment variables in your deployment environment (e.g., Netlify).
-// The application will not work without these real store details.
+// ===================================================================================
+// !! IMPORTANT !! PLEASE READ !!
+// ===================================================================================
+//
+// This file is the central configuration for connecting to your Shopify store
+// during local development.
+//
+// ACTION REQUIRED:
+// 1. Replace the placeholder 'your-store-name.myshopify.com' with your actual
+//    Shopify store domain.
+// 2. Replace the placeholder 'your-storefront-access-token' with your actual
+//    Storefront API access token.
+//
+// HOW IT WORKS:
+// - LOCAL DEVELOPMENT: The application will use the values you enter here.
+//   The status indicator in the footer and on the About page will give you
+//   immediate feedback on whether these credentials are correct.
+//
+// - PRODUCTION (Live on Netlify): For security, the live site will IGNORE
+//   this file. Instead, it will use environment variables named
+//   `SHOPIFY_STORE_DOMAIN` and `SHOPIFY_STOREFRONT_ACCESS_TOKEN` that you
+//   must set in your Netlify site settings.
+//
+// ===================================================================================
 
-// 1. Your actual Shopify store domain (e.g., 'your-store-name.myshopify.com').
-export const SHOPIFY_STORE_DOMAIN = process.env.SHOPIFY_STORE_DOMAIN || '';
+/**
+ * Your Shopify store's unique domain.
+ * @example 'my-awesome-store.myshopify.com'
+ */
+export const SHOPIFY_STORE_DOMAIN = 'dbrd1n-q5.myshopify.com';
 
-// 2. Your Shopify Storefront API access token.
-export const SHOPIFY_STOREFRONT_ACCESS_TOKEN = process.env.SHOPIFY_STOREFRONT_ACCESS_TOKEN || '';
-
-// This check helps diagnose configuration issues early.
-if (!SHOPIFY_STORE_DOMAIN || !SHOPIFY_STOREFRONT_ACCESS_TOKEN) {
-    console.warn(
-        '*****************************************************************\n' +
-        '** WARNING: Shopify environment variables are missing!         **\n' +
-        '** Please set SHOPIFY_STORE_DOMAIN and                         **\n' +
-        '** SHOPIFY_STOREFRONT_ACCESS_TOKEN in your environment to      **\n' +
-        '** connect to your Shopify store.                              **\n' +
-        '*****************************************************************'
-    );
-}
+/**
+ * Your Shopify Storefront API access token.
+ * This is a public token, but it should be treated with care.
+ * @example 'shpat_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx'
+ */
+export const SHOPIFY_STOREFRONT_ACCESS_TOKEN = '1a750a6e9f32c3f35b53e6b796956bde';

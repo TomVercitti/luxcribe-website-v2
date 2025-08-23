@@ -9,9 +9,20 @@ const CartSidebar: React.FC = () => {
   
   const lineItems = cart?.lines.edges.map(edge => edge.node) || [];
 
-  const getCustomizationImage = (item: ShopifyCartLine): string => {
-    const attr = item.attributes.find(attr => attr.key === '_customizationImage');
-    return attr?.value || ''; // Return a placeholder if not found
+  const getItemImage = (item: ShopifyCartLine): string => {
+    // Priority 1: Use the customization image from attributes for the main product.
+    const customImageAttr = item.attributes.find(attr => attr.key === '_customizationImage');
+    if (customImageAttr?.value) {
+        return customImageAttr.value;
+    }
+
+    // Priority 2: Use the variant image from the merchandise object (for fees, etc.).
+    if (item.merchandise.image?.url) {
+        return item.merchandise.image.url;
+    }
+    
+    // Fallback to an empty string if no image is available.
+    return '';
   };
   
   const getCustomizedZones = (item: ShopifyCartLine): string => {
@@ -57,11 +68,13 @@ const CartSidebar: React.FC = () => {
                 <ul className="space-y-4">
                   {lineItems.map(item => (
                     <li key={item.id} className="flex items-start space-x-4 p-4 bg-gray-800 rounded-lg">
-                      <img src={getCustomizationImage(item)} alt="Customized product" className="w-24 h-24 object-cover rounded-md flex-shrink-0 bg-gray-700" />
+                      <img src={getItemImage(item)} alt={item.merchandise.product.title} className="w-24 h-24 object-cover rounded-md flex-shrink-0 bg-gray-700" />
                       <div className="flex-grow">
                         <p className="font-semibold text-white">{item.merchandise.product.title}</p>
                         <p className="text-sm text-gray-400">{item.merchandise.title}</p>
-                        <p className="text-sm text-gray-400">Zones: {getCustomizedZones(item)}</p>
+                        {item.attributes.some(attr => attr.key === '_isCustomizedParent') && (
+                          <p className="text-sm text-gray-400">Zones: {getCustomizedZones(item)}</p>
+                        )}
                         <p className="mt-2 text-lg font-semibold text-indigo-400">${parseFloat(item.merchandise.price.amount).toFixed(2)}</p>
                       </div>
                       <button onClick={() => removeFromCart(item.id)} className="text-gray-500 hover:text-red-500 transition-colors" aria-label={`Remove ${item.merchandise.product.title} from cart`}>

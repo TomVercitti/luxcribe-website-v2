@@ -32,7 +32,7 @@ const CartNotification: React.FC = () => {
 
   return (
     <div className="fixed top-24 right-4 sm:right-6 lg:right-8 z-50 w-full max-w-sm">
-        <div className="bg-gray-800 border border-indigo-500 text-white rounded-lg shadow-2xl p-4 animate-fade-in-right">
+        <div className="bg-slate-900/80 backdrop-blur-sm border border-slate-700 text-white rounded-lg shadow-2xl p-4 animate-fade-in-right">
             <div className="flex items-start justify-between">
                 <div className="flex-grow">
                     <p className="font-semibold text-lg text-green-400">Success!</p>
@@ -42,10 +42,10 @@ const CartNotification: React.FC = () => {
                     <CloseIcon className="w-5 h-5" />
                 </button>
             </div>
-            <div className="mt-4 flex flex-col sm:flex-row gap-3">
+            <div className="mt-4 flex gap-3">
                 <button
                     onClick={handleViewCart}
-                    className="flex-1 text-center px-4 py-2 font-semibold rounded-md transition-colors bg-gray-700 text-white hover:bg-gray-600"
+                    className="flex-1 text-center px-4 py-2 font-semibold rounded-md transition-colors bg-slate-800 text-white hover:bg-slate-700"
                 >
                     View Cart ({cartCount})
                 </button>
