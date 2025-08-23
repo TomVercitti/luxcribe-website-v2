@@ -80,16 +80,6 @@ const ProductDetailPage: React.FC = () => {
     }
   };
 
-  const displayedImage = useMemo(() => {
-    if (!selectedVariation) return '/placeholder.png';
-
-    const liveVariant = shopifyProduct?.variants.edges.find(e => e.node.id === selectedVariation.variantId)?.node;
-    const variantImageUrl = liveVariant?.image?.url;
-    const productImageUrl = shopifyProduct?.featuredImage?.url;
-    
-    return variantImageUrl || productImageUrl || selectedVariation.mockupImage || '/placeholder.png';
-  }, [selectedVariation, shopifyProduct]);
-
   if (!product || !selectedVariation) {
     return (
       <div className="container mx-auto px-4 py-12 text-center">
@@ -114,7 +104,7 @@ const ProductDetailPage: React.FC = () => {
         <div className="sticky top-24">
           <div className="relative bg-gray-800 rounded-lg p-4">
             <img 
-              src={displayedImage} 
+              src={selectedVariation.mockupImage || '/placeholder.png'} 
               alt={`${product.name} - ${selectedVariation.name}`}
               className="w-full h-auto object-contain rounded-lg"
             />

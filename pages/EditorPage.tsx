@@ -110,16 +110,6 @@ const EditorPage: React.FC = () => {
         }
     }, [productId]);
     
-    const displayedImage = useMemo(() => {
-        if (!productData) return '/placeholder.png';
-
-        const liveVariant = shopifyProduct?.variants.edges.find(e => e.node.id === productData.variation.variantId)?.node;
-        const variantImageUrl = liveVariant?.image?.url;
-        const productImageUrl = shopifyProduct?.featuredImage?.url;
-        
-        return variantImageUrl || productImageUrl || productData.variation.mockupImage || '/placeholder.png';
-    }, [productData, shopifyProduct]);
-
     const isNotConfigured = useMemo(() => {
       if (!productData) return false;
       // Check the main product, all text tiers, and the image fee product for placeholder IDs.
@@ -330,7 +320,7 @@ const EditorPage: React.FC = () => {
         window.fabric.Object.prototype.controls.mtr.cursorStyle = 'grab';
 
         const setBackgroundImage = () => {
-          window.fabric.Image.fromURL(displayedImage, (img: any) => {
+          window.fabric.Image.fromURL(productData.variation.mockupImage || '/placeholder.png', (img: any) => {
               if (img) {
                   const canvasWidth = canvas.getWidth();
                   const canvasHeight = canvas.getHeight();
@@ -348,7 +338,7 @@ const EditorPage: React.FC = () => {
                       top: (canvasHeight - imgHeight * scale) / 2
                   });
               } else {
-                  console.error("Failed to load background image:", displayedImage);
+                  console.error("Failed to load background image:", productData.variation.mockupImage || '/placeholder.png');
               }
           });
         };
@@ -411,7 +401,7 @@ const EditorPage: React.FC = () => {
             window.removeEventListener('resize', handleResize);
             canvas.dispose();
         };
-    }, [productData, displayedImage, updateLayersAndPrice, updateHistory]);
+    }, [productData, updateLayersAndPrice, updateHistory]);
     
     // Effect to load zone data when active zone changes
     useEffect(() => {
@@ -793,7 +783,7 @@ const EditorPage: React.FC = () => {
             merchandiseId: productData.variation.variantId,
             quantity: 1,
             attributes: [
-                { key: "_customizationImage", value: displayedImage },
+                { key: "_customizationImage", value: productData.variation.mockupImage || '/placeholder.png' },
                 { key: "_customizedZones", value: customizedZoneNames.join(', ') || 'General' },
                 { key: "Total Price", value: `$${priceDetails.total.toFixed(2)}`},
                 { key: "_Design: Main", value: JSON.stringify(updatedZoneStates[productData.initialZone.id]?.json || '{}') }, // Save at least one zone's design

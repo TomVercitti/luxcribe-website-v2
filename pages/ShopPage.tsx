@@ -88,39 +88,34 @@ const ShopPage: React.FC = () => {
 
       {/* Products Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
-        {filteredProducts.map(product => {
-          const liveProduct = liveProducts[product.id];
-          const imageUrl = liveProduct?.featuredImage?.url || product.featuredImage || product.variations[0]?.mockupImage || '/placeholder.png';
-
-          return (
-            <Link key={product.id} to={`/product/${product.id}`} className="group bg-gray-800 rounded-lg overflow-hidden shadow-lg hover:shadow-indigo-500/20 transition-all transform hover:-translate-y-1">
-              <div className="relative">
-                <img 
-                  src={imageUrl} 
-                  alt={product.name} 
-                  className="w-full h-72 object-cover"
-                />
-                 <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent"></div>
-                 <div className="absolute bottom-4 left-4">
-                   <h3 className="text-xl font-semibold font-lato text-white">{product.name}</h3>
-                   <p className="text-sm text-gray-300">{product.category}</p>
-                 </div>
-              </div>
-              <div className="p-4 flex justify-between items-center">
-                <p className="text-lg font-bold text-indigo-400">
-                  {isLoading ? (
-                      <span className="h-6 bg-gray-700 rounded w-24 inline-block animate-pulse"></span>
-                  ) : (
-                      getProductPrice(product)
-                  )}
-                </p>
-                 <span className="text-sm font-semibold text-white bg-indigo-600/50 group-hover:bg-indigo-600 transition-colors px-3 py-1 rounded-full">
-                    Customize
-                  </span>
-              </div>
-            </Link>
-          );
-        })}
+        {filteredProducts.map(product => (
+          <Link key={product.id} to={`/product/${product.id}`} className="group bg-gray-800 rounded-lg overflow-hidden shadow-lg hover:shadow-indigo-500/20 transition-all transform hover:-translate-y-1">
+            <div className="relative">
+              <img 
+                src={product.variations[0].mockupImage || '/placeholder.png'} 
+                alt={product.name} 
+                className="w-full h-72 object-cover"
+              />
+               <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent"></div>
+               <div className="absolute bottom-4 left-4">
+                 <h3 className="text-xl font-semibold font-lato text-white">{product.name}</h3>
+                 <p className="text-sm text-gray-300">{product.category}</p>
+               </div>
+            </div>
+            <div className="p-4 flex justify-between items-center">
+              <p className="text-lg font-bold text-indigo-400">
+                {isLoading ? (
+                    <span className="h-6 bg-gray-700 rounded w-24 inline-block animate-pulse"></span>
+                ) : (
+                    getProductPrice(product)
+                )}
+              </p>
+               <span className="text-sm font-semibold text-white bg-indigo-600/50 group-hover:bg-indigo-600 transition-colors px-3 py-1 rounded-full">
+                  Customize
+                </span>
+            </div>
+          </Link>
+        ))}
       </div>
     </div>
   );

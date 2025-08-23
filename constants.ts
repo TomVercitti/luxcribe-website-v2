@@ -86,7 +86,7 @@ export const DESIGN_LIBRARY_ITEMS = [
 
 export const customerGalleryItems = [
   {
-    imageUrl: 'https://cdn.shopify.com/s/files/1/0762/2433/2021/files/Hexagon_430x.webp?v=1755923152#',
+    imageUrl: 'https://cdn.shopify.com/s/files/1/0762/2433/2021/files/slate-coaster-square.png?v=1755435099',
     customerName: 'Jessica L.',
     reviewText: 'The custom slate coasters for our anniversary were perfect. The design process was so easy and they look fantastic!',
     productName: 'Slate Coasters',
@@ -152,14 +152,13 @@ export const productCatalog: { [key: string]: Product } = {
     category: 'Drinkware & Barware',
     description: 'Natural slate coasters, perfect for protecting surfaces with a rustic, elegant touch. Personalize them with a logo, monogram, or custom design. Each coaster has padded feet to prevent scratching.',
     basePrice: 14.99, // This is a FALLBACK price. The actual price is fetched live from Shopify.
-    featuredImage: 'https://cdn.shopify.com/s/files/1/0762/2433/2021/files/slate-coasters-all-shapes.png?v=1755435100',
     variations: [
       { 
-        id: 'slate-coaster-hexagon', 
-        name: 'Hexagon',
+        id: 'slate-coaster-square', 
+        name: 'Square',
         material: 'slate',
-        mockupImage: 'https://cdn.shopify.com/s/files/1/0762/2433/2021/files/Hexagon_430x.webp?v=1755923152#',
-        variantId: 'gid://shopify/ProductVariant/46969021464821',
+        mockupImage: 'https://cdn.shopify.com/s/files/1/0762/2433/2021/files/Square_430x.webp?v=1755923080#',
+        variantId: 'gid://shopify/ProductVariant/46969021563125',
         engravingZones: [{ id: 'center', name: 'Center', bounds: { x: 250, y: 150, width: 300, height: 300 } }] 
       },
       { 
@@ -171,19 +170,19 @@ export const productCatalog: { [key: string]: Product } = {
         engravingZones: [{ id: 'center', name: 'Center', bounds: { x: 250, y: 150, width: 300, height: 300 } }] 
       },
       { 
+        id: 'slate-coaster-hexagon', 
+        name: 'Hexagon',
+        material: 'slate',
+        mockupImage: 'https://cdn.shopify.com/s/files/1/0762/2433/2021/files/Hexagon_430x.webp?v=1755923152#',
+        variantId: 'gid://shopify/ProductVariant/46969021464821',
+        engravingZones: [{ id: 'center', name: 'Center', bounds: { x: 250, y: 150, width: 300, height: 300 } }] 
+      },
+      { 
         id: 'slate-coaster-heart', 
         name: 'Heart',
         material: 'slate',
         mockupImage: 'https://cdn.shopify.com/s/files/1/0762/2433/2021/files/Heart_430x.webp?v=1755923137#',
         variantId: 'gid://shopify/ProductVariant/46969021530357',
-        engravingZones: [{ id: 'center', name: 'Center', bounds: { x: 250, y: 150, width: 300, height: 300 } }] 
-      },
-      { 
-        id: 'slate-coaster-square', 
-        name: 'Square',
-        material: 'slate',
-        mockupImage: 'https://cdn.shopify.com/s/files/1/0762/2433/2021/files/Square_430x.webp?v=1755923080#',
-        variantId: 'gid://shopify/ProductVariant/46969021563125',
         engravingZones: [{ id: 'center', name: 'Center', bounds: { x: 250, y: 150, width: 300, height: 300 } }] 
       }
     ]

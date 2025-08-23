@@ -27,7 +27,7 @@ export interface Product {
   description: string;
   basePrice: number; // Used as a fallback if Shopify fetch fails
   variations: ProductVariation[];
-  featuredImage?: string; // The main image for the product, shown on collection pages
+  featuredImage?: string;
 }
 
 export interface PriceDetails {
@@ -115,24 +115,19 @@ export interface ShopifyVariant {
   id: string; // This is the GID
   title: string;
   price: ShopifyPrice;
-  image?: {
-    url: string;
-    altText: string | null;
-  };
 }
 
 export interface ShopifyProduct {
   id: string;
   handle: string;
   title: string;
-  featuredImage?: {
-    url: string;
-    altText: string | null;
-  };
   variants: {
     edges: {
       node: ShopifyVariant;
     }[];
+  };
+  featuredImage?: {
+    url: string;
   };
 }
 

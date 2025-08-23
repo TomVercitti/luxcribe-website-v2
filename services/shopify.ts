@@ -172,10 +172,6 @@ const productWithVariantsFragment = `
     id
     handle
     title
-    featuredImage {
-      url
-      altText
-    }
     variants(first: 25) {
       edges {
         node {
@@ -184,10 +180,6 @@ const productWithVariantsFragment = `
           price {
             amount
             currencyCode
-          }
-          image {
-            url
-            altText
           }
         }
       }
