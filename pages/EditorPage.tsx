@@ -24,27 +24,6 @@ type CanvasState = {
 }
 
 /**
- * Calculates the engraving price for an image based on its data size.
- * This serves as a proxy for complexity.
- * @param imageData - The base64 or SVG string of the image.
- * @returns The calculated price as a number.
- */
-const calculateImagePrice = (imageData: string): number => {
-    const BASE_FEE = 35.00; // A flat fee for any image engraving, serving as the minimum price.
-    const FEE_PER_10KB = 2.00; // The fee for each 10 kilobyte block of data.
-
-    const dataSizeInBytes = imageData.length;
-    const dataSizeInKB = dataSizeInBytes / 1024;
-    
-    const dynamicFee = (dataSizeInKB / 10) * FEE_PER_10KB;
-    const totalPrice = BASE_FEE + dynamicFee;
-    
-    // Round to two decimal places to represent currency.
-    return Math.round(totalPrice * 100) / 100;
-};
-
-
-/**
  * Checks if a Shopify Variant GID is a placeholder used for demonstration.
  * @param variantId The Shopify Variant GID string.
  * @returns True if the ID is a placeholder, false otherwise.
@@ -523,11 +502,19 @@ const EditorPage: React.FC = () => {
         setIsPricingImage(true);
         showNotification("Calculating engraving price for image...");
 
-        // Use a short timeout to simulate an async operation and allow UI to update
-        await new Promise(resolve => setTimeout(resolve, 100));
-
         try {
-            const price = calculateImagePrice(imageData);
+            const response = await fetch('/.netlify/functions/image-pricing', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ imageData }),
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.error || 'Failed to get pricing from server.');
+            }
+            
+            const { price } = await response.json();
 
             const createObject = (callback: (obj: any) => void) => {
                 if (type === 'svg') {

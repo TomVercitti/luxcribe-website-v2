@@ -3,43 +3,45 @@ import { SHOPIFY_STORE_DOMAIN, SHOPIFY_STOREFRONT_ACCESS_TOKEN } from '../config
 
 /**
  * A generic fetch helper for the Shopify Storefront API.
- * This function is the single point of contact for all Shopify API requests.
+ * For regular app use, it calls a secure Netlify function proxy.
+ * For the connection tester on the About page, it can make a direct call using credentials from config.ts.
  */
 const storefrontApi = async <T>(
     query: string,
     variables: Record<string, any> = {},
-    customDomain?: string,
-    customToken?: string
+    customDomain?: string, // Used ONLY for the connection tester
+    customToken?: string   // Used ONLY for the connection tester
 ): Promise<T> => {
-    const domain = customDomain || SHOPIFY_STORE_DOMAIN;
-    const token = customToken || SHOPIFY_STOREFRONT_ACCESS_TOKEN;
+    const isTestConnection = customDomain && customToken;
 
-    if (!domain || domain.includes('your-store-name')) {
-        throw new Error("Shopify domain is not configured. Please update config.ts.");
-    }
-    if (!token || token.includes('your-storefront-access-token')) {
-        throw new Error("Shopify access token is not configured. Please update config.ts.");
-    }
+    // Use the proxy for all standard app operations.
+    // Use the direct Shopify endpoint ONLY for the connection tester.
+    const endpoint = isTestConnection
+        ? `https://${customDomain}/api/2024-04/graphql.json`
+        : '/.netlify/functions/shopify';
+    
+    const options: RequestInit = {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ query, variables }),
+    };
 
-    const shopifyApiUrl = `https://${domain}/api/2024-04/graphql.json`;
+    // If it's a test connection, add the access token header directly.
+    if (isTestConnection) {
+        (options.headers as Record<string,string>)['X-Shopify-Storefront-Access-Token'] = customToken;
+    }
 
     try {
-        const response = await fetch(shopifyApiUrl, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-Shopify-Storefront-Access-Token': token,
-            },
-            body: JSON.stringify({ query, variables }),
-        });
-
+        const response = await fetch(endpoint, options);
         const json = await response.json();
 
         if (json.errors) {
             const errorMessage = json.errors.map((e: any) => e.message).join(', ');
             console.error("Shopify GraphQL Errors:", JSON.stringify(json.errors, null, 2));
             if (errorMessage.toLowerCase().includes('access denied')) {
-                 throw new Error(`Shopify Auth Error: The Access Token is invalid or missing permissions. Please check your credentials in config.ts and Shopify admin settings.`);
+                 throw new Error(`Shopify Auth Error: The Access Token is invalid or missing permissions. Please check your credentials and Shopify admin settings.`);
             }
             if (errorMessage.toLowerCase().includes('merchandise')) {
                  throw new Error(`Shopify Error: A selected product variant is invalid. Please check the 'variantId' values in constants.ts and ensure they exist in your Shopify store.`);
@@ -49,13 +51,15 @@ const storefrontApi = async <T>(
 
         if (!response.ok) {
             console.error("Shopify API Error:", { status: response.status, body: json });
-            throw new Error(`The API request failed with status ${response.status}.`);
+            const errorText = json.error || `The API request failed with status ${response.status}.`;
+            throw new Error(errorText);
         }
         
         return json.data;
     } catch (error: any) {
         console.error("Shopify API call failed:", error);
-        throw new Error(`Failed to communicate with Shopify. Check your network connection and the Shopify domain in config.ts. ${error.message}.`);
+        const message = isTestConnection ? "Failed to communicate with Shopify directly." : "Failed to communicate with the shop proxy.";
+        throw new Error(`${message} Check your network connection. ${error.message}.`);
     }
 };
 
