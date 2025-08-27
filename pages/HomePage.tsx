@@ -27,28 +27,46 @@ const HomePage: React.FC = () => {
         </div>
       </section>
 
-      {/* Shop Collections Section */}
+      {/* Core Offerings Section */}
       <section className="py-20 bg-black">
-          <div className="container mx-auto px-4">
-              <h3 className="text-4xl md:text-5xl font-playfair text-center mb-4">Shop Our Collections</h3>
-              <p className="max-w-2xl mx-auto text-center text-gray-400 mb-12">Find the perfect item, whether you need a ready-to-ship gift or a fully personalized creation.</p>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                  <div className="bg-gray-900 rounded-lg p-8 text-center flex flex-col items-center justify-center shadow-lg">
-                      <h4 className="text-3xl font-bold mb-4">Our Products</h4>
-                      <p className="text-gray-400 mb-6 flex-grow">Browse our curated collection of high-quality, engravable items.</p>
-                      <Link to="/shop" className="mt-auto px-8 py-3 bg-indigo-600 text-white font-semibold rounded-lg hover:bg-indigo-700 transition-colors">
-                        View All Products
-                      </Link>
-                  </div>
-                  <div className="bg-gray-900 rounded-lg p-8 text-center flex flex-col items-center justify-center shadow-lg">
-                      <h4 className="text-3xl font-bold mb-4">Bulk or Complex Orders</h4>
-                      <p className="text-gray-400 mb-6 flex-grow">Have a unique idea or need a large quantity? Start from scratch and get a custom quote.</p>
-                      <Link to="/custom-form" className="mt-auto px-8 py-3 bg-indigo-600 text-white font-semibold rounded-lg hover:bg-indigo-700 transition-colors">
-                        Get a Custom Quote
-                      </Link>
-                  </div>
+        <div className="container mx-auto px-4">
+          <h2 className="text-4xl md:text-5xl font-playfair text-center mb-4">Our Services</h2>
+          <p className="max-w-3xl mx-auto text-center text-gray-400 mb-12">
+            Whether you're looking for a ready-to-ship gift, a personalized item from our collection, or want to engrave something of your own, we have you covered.
+          </p>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            {/* Card 1: Ready-Made Gifts */}
+            <div className="bg-gray-900 rounded-lg p-8 text-center flex flex-col items-center justify-between shadow-lg hover:shadow-indigo-500/20 transition-shadow">
+              <div>
+                <h3 className="text-2xl font-bold mb-3">Shop Ready-Made Gifts</h3>
+                <p className="text-gray-400 mb-6">Browse our collection of pre-designed, ready-to-ship items. Perfect for last-minute gifts.</p>
               </div>
+              <Link to="/shop?type=ready-made" className="mt-auto px-8 py-3 bg-indigo-600 text-white font-semibold rounded-lg hover:bg-indigo-700 transition-colors w-full">
+                Browse Gifts
+              </Link>
+            </div>
+            {/* Card 2: Customize Our Products */}
+            <div className="bg-gray-900 rounded-lg p-8 text-center flex flex-col items-center justify-between shadow-lg hover:shadow-indigo-500/20 transition-shadow">
+              <div>
+                <h3 className="text-2xl font-bold mb-3">Customize Our Products</h3>
+                <p className="text-gray-400 mb-6">Choose an item from our catalog and bring your vision to life with our powerful design editor.</p>
+              </div>
+              <Link to="/shop?type=customizable" className="mt-auto px-8 py-3 bg-indigo-600 text-white font-semibold rounded-lg hover:bg-indigo-700 transition-colors w-full">
+                Start Customizing
+              </Link>
+            </div>
+            {/* Card 3: Engrave Your Own Item */}
+            <div className="bg-gray-900 rounded-lg p-8 text-center flex flex-col items-center justify-between shadow-lg hover:shadow-indigo-500/20 transition-shadow">
+              <div>
+                <h3 className="text-2xl font-bold mb-3">Engrave Your Own Item</h3>
+                <p className="text-gray-400 mb-6">Have a special item you want to personalize? Contact us for a custom quote on our engraving services.</p>
+              </div>
+              <Link to="/custom-form" className="mt-auto px-8 py-3 bg-indigo-600 text-white font-semibold rounded-lg hover:bg-indigo-700 transition-colors w-full">
+                Get a Quote
+              </Link>
+            </div>
           </div>
+        </div>
       </section>
       
       {/* Customer Reviews Section */}

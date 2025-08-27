@@ -12,10 +12,16 @@ import PricingBreakdown from '../components/PricingBreakdown';
 import LayersPanel from '../components/LayersPanel';
 import Notification from '../components/Notification';
 import ZoneSelector from '../components/ZoneSelector';
-import { CartIcon, CloseIcon, InfoIcon, Spinner, CogIcon } from '../components/icons';
+import { CartIcon, CloseIcon, InfoIcon, Spinner, CogIcon, SparklesIcon } from '../components/icons';
 import CartNotification from '../components/CartNotification';
 import AIQuoteGeneratorModal from '../components/AIQuoteGeneratorModal';
+import TextControls from '../components/TextControls';
 import TextEffectsControls from '../components/TextEffectsControls';
+import HistoryControls from '../components/HistoryControls';
+import ArrangeControls from '../components/ArrangeControls';
+import DesignLibrary from '../components/DesignLibrary';
+import AIGenerator from '../components/AIGenerator';
+import { featureFlags } from '../config/featureFlags';
 
 type CanvasState = {
     json: string | null;
@@ -42,6 +48,7 @@ const EditorPage: React.FC = () => {
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const fabricRef = useRef<any>(null);
     const editorContainerRef = useRef<HTMLDivElement>(null);
+    const fileInputRef = useRef<HTMLInputElement>(null);
     
     const [priceDetails, setPriceDetails] = useState<PriceDetails>({ base: 0, text: 0, images: 0, total: 0, characterCount: 0 });
     const [layers, setLayers] = useState<any[]>([]);
@@ -54,12 +61,18 @@ const EditorPage: React.FC = () => {
     const [activeZoneId, setActiveZoneId] = useState<string | null>(zoneId || null);
 
     const [isQuoteModalOpen, setIsQuoteModalOpen] = useState(false);
+    const [isGuideModalOpen, setIsGuideModalOpen] = useState(false);
     const [shopifyProduct, setShopifyProduct] = useState<ShopifyProduct | null>(null);
     const [isLoadingPrice, setIsLoadingPrice] = useState(true);
     const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
 
 
     const isRestoringState = useRef(false);
+
+    // Log feature flag on component mount to verify it's wired up
+    useEffect(() => {
+        console.log('Feature Flag - LUXCRIBE_PRICING_ENGINE is set to:', featureFlags.LUXCRIBE_PRICING_ENGINE);
+    }, []);
 
     const productData = useMemo(() => {
         if (!productId || !variationId || !zoneId) return null;
@@ -569,24 +582,30 @@ const EditorPage: React.FC = () => {
         updateLayersAndPrice();
     }
     
-    const toggleTextStyle = (style: 'bold' | 'italic' | 'underline') => {
-        if (!activeObject?.isType('textbox')) return;
-
-        const isStyleActive = (prop: string, value: any) => activeObject.get(prop) === value;
-
-        switch (style) {
-            case 'bold':
-                modifyActiveObject({ fontWeight: isStyleActive('fontWeight', 'bold') ? 'normal' : 'bold' });
+    const handleArrange = (direction: 'front' | 'back' | 'forward' | 'backward') => {
+        if (!activeObject || !fabricRef.current) return;
+        const canvas = fabricRef.current;
+        switch (direction) {
+            case 'front':
+                canvas.bringToFront(activeObject);
                 break;
-            case 'italic':
-                modifyActiveObject({ fontStyle: isStyleActive('fontStyle', 'italic') ? 'normal' : 'italic' });
+            case 'back':
+                canvas.sendToBack(activeObject);
                 break;
-            case 'underline':
-                modifyActiveObject({ underline: !isStyleActive('underline', true) });
+            case 'forward':
+                canvas.bringForward(activeObject);
+                break;
+            case 'backward':
+                canvas.sendBackwards(activeObject);
                 break;
         }
+        canvas.renderAll();
+        updateHistory(canvas);
     };
 
+    const handleAiImageSelect = (imageData: string) => {
+        priceAndAddImage(imageData, 'png');
+    };
 
     const handleTextCurveChange = (curve: number) => {
         if (activeObject?.isType('textbox')) {
@@ -717,302 +736,293 @@ const EditorPage: React.FC = () => {
     const handleAddToCart = async () => {
         if (!productData || isCtaDisabled) return;
 
-        // First, ensure the current zone's state is saved before calculation
-        const updatedZoneStates = { ...zoneStates };
-        if (activeZoneId && fabricRef.current) {
-            const json = JSON.stringify(fabricRef.current.toJSON(['data']));
-            updatedZoneStates[activeZoneId] = { ...updatedZoneStates[activeZoneId], json };
-        }
-
-        let totalCharacterCount = 0;
-        let totalImageFee = 0;
-        const allText: string[] = [];
-
-        // Loop through all zones to check for customizations
-        Object.values(updatedZoneStates).forEach(state => {
-            if (state.json) {
-                try {
-                    const parsed = JSON.parse(state.json);
-                    parsed.objects.forEach((obj: any) => {
-                        if (obj.data?.userAdded) {
-                            if (obj.type === 'textbox' && obj.text) {
-                                totalCharacterCount += obj.text.length;
-                                allText.push(obj.text);
-                            } else if ((obj.type === 'image' || obj.type === 'group') && obj.data?.price) {
-                                totalImageFee += obj.data.price;
-                            }
-                        }
-                    });
-                } catch (e) {
-                    console.error('Error processing zone JSON for fee calculation', e);
-                }
-            }
-        });
-
-        if (totalCharacterCount === 0 && totalImageFee === 0) {
-            showNotification("Please add a design to at least one zone before adding to cart.");
-            return;
-        }
-        
-        const maxTier = TEXT_ENGRAVING_TIERS[TEXT_ENGRAVING_TIERS.length - 1];
-        if (totalCharacterCount > maxTier.max) {
-             showNotification(`Error: Character count of ${totalCharacterCount} exceeds the maximum of ${maxTier.max}.`);
-             return;
-        }
-        
-        // Find names of zones that have user-added content
-        const customizedZoneNames = Object.keys(updatedZoneStates).filter(zoneId => {
-            try {
-                const state = updatedZoneStates[zoneId];
-                if (!state.json) return false;
-                const parsed = JSON.parse(state.json);
-                // Check if there are any objects that were added by the user
-                return parsed.objects && parsed.objects.some((obj: any) => obj.data?.userAdded);
-            } catch {
-                return false;
-            }
-        }).map(zoneId => {
-            // Find the zone object to get its name
-            const zoneInfo = productData.variation.engravingZones.find(z => z.id === zoneId);
-            return zoneInfo ? zoneInfo.name : null;
-        }).filter(Boolean); // Filter out any nulls if a zone wasn't found
-
-        const linesToAdd: CartItem[] = [];
-        const uniqueBundleId = `luxcribe-${Date.now()}`;
-
-        // 1. Add the base product
-        linesToAdd.push({
-            merchandiseId: productData.variation.variantId,
-            quantity: 1,
-            attributes: [
-                { key: "_customizationImage", value: productData.variation.mockupImage || '/placeholder.png' },
-                { key: "_customizedZones", value: customizedZoneNames.join(', ') || 'General' },
-                { key: "Total Price", value: `$${priceDetails.total.toFixed(2)}`},
-                { key: "_Design: Main", value: JSON.stringify(updatedZoneStates[productData.initialZone.id]?.json || '{}') }, // Save at least one zone's design
-                { key: "_customizationBundleId", value: uniqueBundleId },
-                { key: "_isCustomizedParent", value: "true" }
-            ]
-        });
-
-        // 2. Add the correct text fee variant based on character count
-        if (totalCharacterCount > 0) {
-            const tier = TEXT_ENGRAVING_TIERS.find(t => totalCharacterCount >= t.min && totalCharacterCount <= t.max);
-            if(tier) {
-                linesToAdd.push({
-                    merchandiseId: tier.variantId,
-                    quantity: 1,
-                    attributes: [
-                        { key: "Engraving Type", value: "Text Customization" },
-                        { key: "Character Count", value: totalCharacterCount.toString() },
-                        { key: "Engraved Text", value: allText.join(' | ').substring(0, 1024) },
-                        { key: "_customizationBundleId", value: uniqueBundleId }
-                    ]
-                });
-            }
-        }
-        
-        // 3. Add the image fee product if applicable
-        if (totalImageFee > 0) {
-            linesToAdd.push({
-                merchandiseId: IMAGE_FEE_PRODUCT_VARIANT_ID,
-                quantity: 1,
-                attributes: [
-                    { key: "Engraving Type", value: "Image/Logo Customization" },
-                    { key: "Calculated Fee", value: `$${totalImageFee.toFixed(2)}`},
-                    { key: "_customizationBundleId", value: uniqueBundleId }
-                ]
-            });
-        }
+        setIsPricingImage(true); // Re-use this for "adding to cart" state
+        showNotification("Preparing your design for the cart...");
 
         try {
-            await addToCart(linesToAdd);
-            console.log('Successfully added customized item and fees to cart:', linesToAdd);
+            const { product, variation } = productData;
+            const itemsToAdd: CartItem[] = [];
+            const customizationBundleId = new Date().getTime().toString();
+            let finalPreviewImage = '';
+            const customizedZones: string[] = [];
+
+            // 1. Process all zones and generate a composite preview
+            const canvasForPreview = new window.fabric.StaticCanvas(null, {
+                width: fabricRef.current.width,
+                height: fabricRef.current.height,
+            });
+
+            // Set the product mockup as the background
+            await new Promise<void>(resolve => {
+                window.fabric.Image.fromURL(variation.mockupImage, (img: any) => {
+                    const canvasWidth = canvasForPreview.getWidth();
+                    const canvasHeight = canvasForPreview.getHeight();
+                    const scale = Math.min(canvasWidth / (img.width || 1), canvasHeight / (img.height || 1));
+                    canvasForPreview.setBackgroundImage(img, () => resolve(), {
+                        scaleX: scale,
+                        scaleY: scale,
+                        left: (canvasWidth - (img.width || 0) * scale) / 2,
+                        top: (canvasHeight - (img.height || 0) * scale) / 2,
+                    });
+                });
+            });
+
+            const allZoneObjects: any[] = [];
+            for (const zone of variation.engravingZones) {
+                const zoneState = zoneStates[zone.id];
+                if (zoneState && zoneState.json) {
+                    const canvasData = JSON.parse(zoneState.json);
+                    const userObjects = canvasData.objects?.filter((obj: any) => obj.data?.userAdded);
+                    if (userObjects?.length > 0) {
+                        customizedZones.push(zone.name);
+                        allZoneObjects.push(...userObjects);
+                    }
+                }
+            }
+            
+            // Render all objects onto the preview canvas
+            if (allZoneObjects.length > 0) {
+                 await new Promise<void>(resolve => {
+                    canvasForPreview.loadFromJSON({ objects: allZoneObjects }, () => {
+                        canvasForPreview.renderAll();
+                        resolve();
+                    });
+                });
+            }
+
+            finalPreviewImage = canvasForPreview.toDataURL({ format: 'png', quality: 0.8 });
+            
+            // 2. Main Product Item
+            itemsToAdd.push({
+                merchandiseId: variation.variantId,
+                quantity: 1,
+                attributes: [
+                    { key: '_isCustomizedParent', value: 'true' },
+                    { key: '_customizationBundleId', value: customizationBundleId },
+                    { key: '_customizationImage', value: finalPreviewImage },
+                    { key: '_customizedZones', value: customizedZones.join(', ') || 'None' },
+                    { key: 'Product Name', value: `${product.name} (${variation.name})` },
+                ],
+            });
+
+            // 3. Text Engraving Fee Item
+            if (priceDetails.text > 0 && priceDetails.characterCount > 0) {
+                const tier = TEXT_ENGRAVING_TIERS.find(t => priceDetails.characterCount >= t.min && priceDetails.characterCount <= t.max);
+                if (tier) {
+                    itemsToAdd.push({
+                        merchandiseId: tier.variantId,
+                        quantity: 1,
+                        attributes: [
+                            { key: '_isCustomizationFee', value: 'true' },
+                            { key: '_customizationBundleId', value: customizationBundleId },
+                            { key: 'Fee For', value: `${product.name} (${variation.name})` }
+                        ],
+                    });
+                }
+            }
+
+            // 4. Image Engraving Fee Item
+            if (priceDetails.images > 0) {
+                 itemsToAdd.push({
+                    merchandiseId: IMAGE_FEE_PRODUCT_VARIANT_ID,
+                    quantity: 1,
+                    attributes: [
+                        { key: '_isCustomizationFee', value: 'true' },
+                        { key: '_customizationBundleId', value: customizationBundleId },
+                        { key: 'Fee For', value: `${product.name} (${variation.name})` },
+                        { key: 'Engraving Fee', value: priceDetails.images.toFixed(2) }
+                    ],
+                });
+            }
+
+            // 5. Add to cart
+            if (itemsToAdd.length > 0) {
+                await addToCart(itemsToAdd);
+            }
+
         } catch (error: any) {
-            console.error("Failed to add to cart:", error);
-            const friendlyMessage = (error.message || '').replace('Shopify Error: ', '');
-            showNotification(`Error: ${friendlyMessage || "Could not add item to cart."}`);
+            console.error("Failed to add customized item to cart:", error);
+            showNotification(`Error: ${error.message || "Could not add to cart."}`);
+        } finally {
+            setIsPricingImage(false);
         }
     };
-
-
-    if (!productData || !activeZoneId || !zoneStates[activeZoneId]) return <div className="h-screen w-screen flex items-center justify-center bg-gray-900 text-white">Loading product...</div>;
     
-    const currentHistory = zoneStates[activeZoneId];
+    if (!productData) {
+        return (
+            <div className="flex items-center justify-center h-screen bg-gray-900 text-white">
+                <div className="text-center">
+                    <h1 className="text-3xl font-bold mb-4">Product Not Found</h1>
+                    <p className="mb-8">The product you are trying to customize does not exist.</p>
+                    <Link to="/shop" className="px-6 py-3 bg-indigo-600 rounded-lg hover:bg-indigo-700">
+                        Back to Shop
+                    </Link>
+                </div>
+            </div>
+        );
+    }
+
+    const { product, variation } = productData;
+    const canUndo = activeZoneId ? zoneStates[activeZoneId]?.historyIndex > 0 : false;
+    const canRedo = activeZoneId ? zoneStates[activeZoneId]?.historyIndex < (zoneStates[activeZoneId]?.history.length || 0) - 1 : false;
+
+    // Sidebar Content
+    const sidebarContent = (
+        <>
+            <div className="p-4 border-b border-gray-700">
+                <ZoneSelector 
+                    zones={variation.engravingZones}
+                    activeZoneId={activeZoneId || ''}
+                    onSelectZone={handleSelectZone}
+                />
+            </div>
+            
+            <input type="file" ref={fileInputRef} onChange={handleFileUpload} className="hidden" accept=".png,.svg" />
+
+            <div className="p-4 overflow-y-auto flex-grow">
+                {activeObject ? (
+                    <>
+                        {activeObject.isType('textbox') && (
+                            <>
+                                <TextControls 
+                                    onAddText={addText}
+                                    onFontChange={(font) => modifyActiveObject({ fontFamily: font })}
+                                    onTextAlign={(align) => modifyActiveObject({ textAlign: align })}
+                                    activeObject={activeObject}
+                                />
+                                <TextEffectsControls 
+                                    onCurveChange={handleTextCurveChange}
+                                    onRotateChange={(angle) => modifyActiveObject({ angle })}
+                                    activeObject={activeObject}
+                                />
+                            </>
+                        )}
+                        <ArrangeControls onArrange={handleArrange} activeObject={activeObject} />
+                    </>
+                ) : (
+                    <>
+                        {/* Content Creation Tools */}
+                        <TextControls onAddText={addText} onFontChange={()=>{}} onTextAlign={()=>{}} activeObject={null} />
+                        <div className="mb-4 p-3 bg-gray-900 rounded-lg space-y-2">
+                             <h3 className="font-semibold text-indigo-300">Add Image or Design</h3>
+                             <button onClick={() => setIsGuideModalOpen(true)} className="w-full bg-gray-600 hover:bg-gray-700 p-2 rounded text-sm font-semibold">
+                                Upload from Computer
+                            </button>
+                             <button onClick={() => setIsQuoteModalOpen(true)} className="w-full bg-purple-600 hover:bg-purple-700 p-2 rounded text-sm font-semibold flex items-center justify-center gap-2">
+                                <SparklesIcon className="w-4 h-4"/>
+                                AI Ideas for Text
+                            </button>
+                        </div>
+                        <DesignLibrary onSelect={addFromLibrary} />
+                        <AIGenerator onImageSelect={handleAiImageSelect} />
+                    </>
+                )}
+                 
+                <HistoryControls onUndo={handleUndo} onRedo={handleRedo} canUndo={canUndo} canRedo={canRedo}/>
+                <LayersPanel layers={layers} onSelectLayer={selectLayer} onDeleteLayer={deleteLayer} activeObject={activeObject} />
+            </div>
+
+            <div className="p-4 border-t border-gray-700 bg-gray-800/50">
+                {isLoadingPrice ? (
+                    <div className="flex justify-center items-center h-24">
+                        <Spinner />
+                    </div>
+                ) : (
+                     <PricingBreakdown priceDetails={priceDetails} />
+                )}
+               
+                <button 
+                    onClick={handleAddToCart} 
+                    disabled={isCtaDisabled}
+                    className="w-full mt-4 py-3 px-6 bg-indigo-600 text-white font-semibold rounded-lg hover:bg-indigo-700 transition-colors disabled:bg-gray-600 disabled:cursor-not-allowed flex items-center justify-center text-lg"
+                >
+                    {isPricingImage ? <Spinner className="w-6 h-6 mr-2" /> : <CartIcon className="w-6 h-6 mr-2"/>}
+                    {isPricingImage ? 'Processing...' : 'Add to Cart'}
+                </button>
+                 {isNotConfigured && (
+                    <p className="text-xs text-yellow-400 mt-2 text-center">Store not configured. Add to Cart is disabled.</p>
+                )}
+                 {initializationError && (
+                    <p className="text-xs text-red-400 mt-2 text-center">Cart connection error. Add to Cart is disabled.</p>
+                )}
+            </div>
+        </>
+    );
 
     return (
-        <div className="flex flex-col lg:flex-row h-screen bg-gray-900 text-white overflow-hidden">
+        <div className="h-screen w-screen bg-gray-900 flex flex-col overflow-hidden text-white">
+            <header className="flex-shrink-0 bg-gray-800 border-b border-gray-700 shadow-md z-30">
+                <div className="container mx-auto px-4">
+                    <div className="flex items-center justify-between h-20">
+                        <div className="flex items-center">
+                            <Link to={`/product/${productId}`} className="text-gray-400 hover:text-white flex items-center">
+                                <CloseIcon className="w-5 h-5 mr-2" />
+                                <span className="hidden md:inline">Back to Product</span>
+                            </Link>
+                            <div className="hidden md:block mx-4 h-8 w-px bg-gray-600" />
+                            <div>
+                                <h1 className="text-xl font-semibold">{product.name}</h1>
+                                <p className="text-sm text-gray-400">{variation.name} - <span className="font-semibold">{activeZone?.name}</span></p>
+                            </div>
+                        </div>
+
+                        <div className="flex items-center space-x-4">
+                            {isDisclaimerVisible && (
+                                <div className="hidden lg:flex items-center p-2 rounded-md bg-yellow-900/50 text-yellow-300 text-xs">
+                                    <InfoIcon className="w-4 h-4 mr-2 flex-shrink-0" />
+                                    <span>This is a visual guide. Final engraving may vary slightly.</span>
+                                    <button onClick={() => setIsDisclaimerVisible(false)} className="ml-2 text-yellow-200 hover:text-white">&times;</button>
+                                </div>
+                            )}
+                            <button onClick={() => setIsMobileSidebarOpen(true)} className="md:hidden p-2 rounded-md hover:bg-gray-700">
+                                <CogIcon className="w-6 h-6" />
+                            </button>
+                             <button onClick={toggleCart} className="relative p-2 rounded-md hover:bg-gray-700">
+                                <CartIcon className="w-6 h-6" />
+                                {cartCount > 0 && (
+                                    <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-xs rounded-full flex items-center justify-center">
+                                        {cartCount}
+                                    </span>
+                                )}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </header>
+
+            <main className="flex-grow flex overflow-hidden">
+                {/* Desktop Sidebar */}
+                <aside className="hidden md:flex flex-col w-96 bg-gray-800 border-r border-gray-700 flex-shrink-0">
+                   {sidebarContent}
+                </aside>
+
+                {/* Mobile Sidebar */}
+                 <div className={`fixed inset-0 z-40 md:hidden transition-transform duration-300 ease-in-out ${isMobileSidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}>
+                    <div className="absolute inset-0 bg-black/60" onClick={() => setIsMobileSidebarOpen(false)}></div>
+                    <aside className="relative flex flex-col w-96 max-w-[90vw] h-full bg-gray-800 border-r border-gray-700 flex-shrink-0">
+                         <button onClick={() => setIsMobileSidebarOpen(false)} className="absolute top-4 right-4 text-gray-400 hover:text-white p-2">
+                            <CloseIcon />
+                        </button>
+                       {sidebarContent}
+                    </aside>
+                </div>
+
+
+                <div className="flex-grow flex flex-col">
+                    <div ref={editorContainerRef} className="flex-grow relative bg-gray-900">
+                        <canvas ref={canvasRef} />
+                        <Notification message={notification} />
+                    </div>
+                </div>
+            </main>
+
             <CartNotification />
-            <AIQuoteGeneratorModal
+            <AIQuoteGeneratorModal 
                 isOpen={isQuoteModalOpen}
                 onClose={() => setIsQuoteModalOpen(false)}
                 onSelectQuote={addTextWithQuote}
             />
-            {/* Backdrop for mobile sidebar */}
-            {isMobileSidebarOpen && (
-                <div
-                    className="fixed inset-0 bg-black bg-opacity-60 z-40 lg:hidden"
-                    onClick={() => setIsMobileSidebarOpen(false)}
-                    aria-hidden="true"
-                />
-            )}
 
-            {/* Main Editor Content */}
-            <div className="flex-1 flex flex-col min-w-0">
-                <div className="flex-shrink-0 relative z-10">
-                  <EditorToolbar 
-                    activeObject={activeObject}
-                    onAddText={() => addText()}
-                    onFileUpload={handleFileUpload}
-                    onAddFromLibrary={addFromLibrary}
-                    onUndo={handleUndo}
-                    onRedo={handleRedo}
-                    canUndo={currentHistory.historyIndex > 0}
-                    canRedo={currentHistory.historyIndex < currentHistory.history.length - 1}
-                    onModification={modifyActiveObject}
-                    onToggleTextStyle={toggleTextStyle}
-                    onTextCurveChange={handleTextCurveChange}
-                    onDeleteObject={deleteLayer}
-                    materialStyle={materialStyle}
-                    onOpenQuoteGenerator={() => setIsQuoteModalOpen(true)}
-                  />
-                </div>
-                <main ref={editorContainerRef} className="flex-1 relative bg-gray-900 p-4 flex items-center justify-center overflow-hidden">
-                    <canvas ref={canvasRef} />
-                    <Notification message={notification} />
-                    {isDisclaimerVisible && (
-                        <div className="absolute bottom-4 left-4 right-4 lg:left-1/2 lg:-translate-x-1/2 lg:max-w-4xl bg-black/50 backdrop-blur-sm p-4 rounded-lg shadow-lg flex items-start gap-4 z-20">
-                            <InfoIcon className="w-6 h-6 text-indigo-400 flex-shrink-0 mt-0.5" />
-                            <p className="text-sm text-gray-300 flex-grow">
-                                <strong>Important:</strong> The preview is a visual guide. Final engraving results may vary slightly due to material, tool limitations, and design complexity. We will do our best to match your design.
-                            </p>
-                            <button 
-                                onClick={() => setIsDisclaimerVisible(false)} 
-                                className="text-gray-400 hover:text-white transition-colors flex-shrink-0"
-                                aria-label="Dismiss disclaimer"
-                            >
-                                <CloseIcon className="w-5 h-5" />
-                            </button>
-                        </div>
-                    )}
-                </main>
-            </div>
-
-
-            {/* Sidebar / Mobile Panel */}
-             <aside className={`bg-gray-800 flex-shrink-0 flex flex-col justify-between lg:w-96 lg:p-6 lg:static lg:h-auto lg:overflow-y-auto lg:transform-none lg:transition-none lg:z-auto fixed bottom-0 left-0 right-0 h-[75vh] rounded-t-2xl p-6 z-50 overflow-y-auto transform transition-transform duration-300 ease-in-out ${isMobileSidebarOpen ? 'translate-y-0' : 'translate-y-full'}`}>
-                <div>
-                  <div className="flex justify-between items-center border-b border-gray-700 pb-3 mb-6">
-                    <h2 className="text-2xl font-playfair">Design Details</h2>
-                    {/* Close button for mobile */}
-                    <button onClick={() => setIsMobileSidebarOpen(false)} className="lg:hidden text-gray-400 hover:text-white" aria-label="Close design controls">
-                        <CloseIcon />
-                    </button>
-                     {/* Cart icon for desktop */}
-                     <button
-                        onClick={toggleCart}
-                        className="hidden lg:block relative text-gray-300 hover:text-indigo-400 transition-colors"
-                        aria-label="Open shopping cart"
-                    >
-                        <CartIcon />
-                        {cartCount > 0 && (
-                            <span className="absolute -top-2 -right-2 w-5 h-5 bg-red-500 text-white text-xs rounded-full flex items-center justify-center">
-                            {cartCount}
-                            </span>
-                        )}
-                    </button>
-                  </div>
-                  
-                  {productData.variation.engravingZones.length > 1 && (
-                      <ZoneSelector 
-                          zones={productData.variation.engravingZones}
-                          activeZoneId={activeZoneId}
-                          onSelectZone={handleSelectZone}
-                      />
-                  )}
-                  
-                  {isPricingImage && (
-                    <div className="mb-4 p-3 bg-indigo-900/50 rounded-lg flex items-center justify-center text-indigo-300">
-                        <Spinner className="w-5 h-5 mr-3"/>
-                        <span>Calculating image price...</span>
-                    </div>
-                  )}
-
-                  <LayersPanel layers={layers} onSelectLayer={selectLayer} onDeleteLayer={deleteLayer} activeObject={activeObject} />
-
-                  <TextEffectsControls
-                    activeObject={activeObject}
-                    onCurveChange={handleTextCurveChange}
-                    onRotateChange={angle => modifyActiveObject({ angle })}
-                  />
-
-                  <div className="mt-8">
-                    {isLoadingPrice ? (
-                        <div className="space-y-2">
-                            <div className="h-6 bg-gray-700 rounded w-full animate-pulse"></div>
-                            <div className="h-6 bg-gray-700 rounded w-3/4 animate-pulse"></div>
-                            <div className="h-8 bg-gray-700 rounded w-1/2 animate-pulse mt-4"></div>
-                        </div>
-                    ) : (
-                        <PricingBreakdown priceDetails={priceDetails} />
-                    )}
-                  </div>
-
-                  {initializationError && (
-                    <div className="mt-6 p-3 border border-red-500 rounded-lg bg-red-900/30 text-red-200 text-sm">
-                        <p className="font-bold flex items-center">
-                          <svg className="w-5 h-5 mr-2 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd"></path></svg>
-                          Cart Unavailable
-                        </p>
-                        <p className="mt-1">{initializationError}</p>
-                        <p className="mt-1">Visit the <Link to="/about" className="underline font-semibold hover:text-white">About Page</Link> for details.</p>
-                    </div>
-                  )}
-
-                  {isNotConfigured && (
-                    <div className="mt-6 p-3 border border-yellow-500 rounded-lg bg-yellow-900/30 text-yellow-200 text-sm">
-                        <p className="font-bold flex items-center">
-                          <svg className="w-5 h-5 mr-2 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.21 3.03-1.742 3.03H4.42c-1.532 0-2.492-1.696-1.742-3.03l5.58-9.92zM10 13a1 1 0 110-2 1 1 0 010 2zm-1-8a1 1 0 011-1h.01a1 1 0 110 2H10a1 1 0 01-1-1z" clipRule="evenodd"></path></svg>
-                          Configuration Needed
-                        </p>
-                        <p className="mt-1">This feature requires configuration. Please ensure the main product variant ID and the new fee product variant IDs in <code className="bg-gray-700 p-1 rounded text-xs">constants.ts</code> are updated with real values from your Shopify store.</p>
-                    </div>
-                  )}
-                </div>
-                 <div className="mt-6">
-                    <button onClick={() => navigate(`/product/${productId}`)} className="w-full bg-gray-600 hover:bg-gray-700 p-3 rounded-lg mb-3 text-lg font-medium">Back to Product</button>
-                    <button 
-                        onClick={handleAddToCart} 
-                        className="w-full p-3 rounded-lg text-lg font-bold flex items-center justify-center gap-2 transition-colors disabled:bg-gray-600 disabled:text-gray-400 disabled:cursor-not-allowed bg-indigo-600 hover:bg-indigo-700"
-                        disabled={isCtaDisabled}
-                    >
-                        {isPricingImage || isLoadingPrice ? <Spinner className="w-6 h-6"/> : <CartIcon className="w-6 h-6"/>}
-                        {isPricingImage ? 'Pricing Image...' : (isLoadingPrice ? 'Loading...' : 'Add to Cart')}
-                    </button>
-                 </div>
-            </aside>
-            
-            {/* Floating Action Buttons for Mobile */}
-            <div className="lg:hidden fixed bottom-6 right-6 z-40 flex flex-col gap-4">
-                <button
-                    onClick={toggleCart}
-                    className="relative bg-gray-800 text-white w-16 h-16 rounded-full shadow-lg flex items-center justify-center"
-                    aria-label="Open shopping cart"
-                >
-                    <CartIcon className="w-8 h-8"/>
-                    {cartCount > 0 && (
-                        <span className="absolute top-0 right-0 w-6 h-6 bg-red-500 text-white text-xs rounded-full flex items-center justify-center border-2 border-gray-800">
-                        {cartCount}
-                        </span>
-                    )}
-                </button>
-                <button
-                    onClick={() => setIsMobileSidebarOpen(true)}
-                    className="bg-indigo-600 text-white w-16 h-16 rounded-full shadow-lg flex items-center justify-center"
-                    aria-label="Open design controls"
-                >
-                    <CogIcon className="w-8 h-8"/>
-                </button>
-            </div>
         </div>
     );
 };

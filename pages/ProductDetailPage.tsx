@@ -95,7 +95,7 @@ const ProductDetailPage: React.FC = () => {
   const hasMultipleVariations = product.variations.length > 1;
   const isCtaDisabled = isNotConfigured || !!initializationError || isLoadingPrice;
   const currentPrice = priceMap.get(selectedVariation.variantId) || product.basePrice.toFixed(2);
-
+  const isReadyMade = product.type === 'ready-made';
 
   return (
     <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-12">
@@ -176,43 +176,55 @@ const ProductDetailPage: React.FC = () => {
           {/* Actions CTA */}
           <div className="mt-6 p-6 border border-gray-700 rounded-lg bg-gray-800/50">
              <h3 className="text-xl font-semibold mb-4 text-white">
-                Purchase Options
+                {isReadyMade ? 'Purchase' : 'Purchase Options'}
              </h3>
              <div className="flex flex-col gap-4">
-                <button
-                  onClick={handleAddToCart}
-                  disabled={isCtaDisabled || isAddingToCart}
-                  className="w-full text-center px-6 py-3 font-semibold rounded-md transition-colors text-lg flex items-center justify-center bg-gray-700 text-white hover:bg-gray-600 disabled:bg-gray-600 disabled:text-gray-400 disabled:cursor-not-allowed"
-                >
-                 {isAddingToCart ? (
-                   <Spinner className="w-6 h-6" />
-                 ) : (
-                   'Add to Cart (No Customization)'
-                 )}
-               </button>
-              
-               <div className="relative flex items-center">
-                  <div className="flex-grow border-t border-gray-600"></div>
-                  <span className="flex-shrink mx-4 text-gray-400">OR</span>
-                  <div className="flex-grow border-t border-gray-600"></div>
-              </div>
-
-               <div className="flex flex-col gap-3">
-                 {selectedVariation.engravingZones.length > 0 && (
-                   <Link
-                     to={isCtaDisabled ? '#' : `/editor/${product.id}/${selectedVariation.id}/${selectedVariation.engravingZones[0].id}`}
-                     className={`block w-full text-center px-6 py-3 font-semibold rounded-md transition-colors text-lg
-                      ${isCtaDisabled 
-                        ? 'bg-gray-600 text-gray-400 cursor-not-allowed pointer-events-none' 
-                        : 'bg-indigo-600 text-white hover:bg-indigo-700'
-                      }`}
-                     aria-disabled={isCtaDisabled}
-                     onClick={(e) => isCtaDisabled && e.preventDefault()}
-                   >
-                     Customize
-                   </Link>
-                 )}
-               </div>
+                {isReadyMade ? (
+                  <button
+                    onClick={handleAddToCart}
+                    disabled={isCtaDisabled || isAddingToCart}
+                    className="w-full text-center px-6 py-3 font-semibold rounded-md transition-colors text-lg flex items-center justify-center bg-indigo-600 text-white hover:bg-indigo-700 disabled:bg-gray-600 disabled:text-gray-400 disabled:cursor-not-allowed"
+                  >
+                   {isAddingToCart ? <Spinner className="w-6 h-6" /> : 'Add to Cart'}
+                  </button>
+                ) : (
+                  <>
+                    <button
+                      onClick={handleAddToCart}
+                      disabled={isCtaDisabled || isAddingToCart}
+                      className="w-full text-center px-6 py-3 font-semibold rounded-md transition-colors text-lg flex items-center justify-center bg-gray-700 text-white hover:bg-gray-600 disabled:bg-gray-600 disabled:text-gray-400 disabled:cursor-not-allowed"
+                    >
+                     {isAddingToCart ? (
+                       <Spinner className="w-6 h-6" />
+                     ) : (
+                       'Add to Cart (No Customization)'
+                     )}
+                   </button>
+                  
+                   <div className="relative flex items-center">
+                      <div className="flex-grow border-t border-gray-600"></div>
+                      <span className="flex-shrink mx-4 text-gray-400">OR</span>
+                      <div className="flex-grow border-t border-gray-600"></div>
+                  </div>
+    
+                   <div className="flex flex-col gap-3">
+                     {selectedVariation.engravingZones.length > 0 && (
+                       <Link
+                         to={isCtaDisabled ? '#' : `/editor/${product.id}/${selectedVariation.id}/${selectedVariation.engravingZones[0].id}`}
+                         className={`block w-full text-center px-6 py-3 font-semibold rounded-md transition-colors text-lg
+                          ${isCtaDisabled 
+                            ? 'bg-gray-600 text-gray-400 cursor-not-allowed pointer-events-none' 
+                            : 'bg-indigo-600 text-white hover:bg-indigo-700'
+                          }`}
+                         aria-disabled={isCtaDisabled}
+                         onClick={(e) => isCtaDisabled && e.preventDefault()}
+                       >
+                         Customize
+                       </Link>
+                     )}
+                   </div>
+                  </>
+                )}
              </div>
              {!hasMultipleVariations && (
                 <p className="text-sm text-gray-400 mt-4">Style: {selectedVariation.name}</p>

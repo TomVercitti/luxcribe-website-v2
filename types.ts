@@ -28,6 +28,9 @@ export interface Product {
   basePrice: number; // Used as a fallback if Shopify fetch fails
   variations: ProductVariation[];
   featuredImage?: string;
+  tags?: string[];
+  createdAt?: string;
+  type?: 'customizable' | 'ready-made';
 }
 
 export interface PriceDetails {

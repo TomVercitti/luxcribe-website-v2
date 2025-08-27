@@ -12,26 +12,28 @@ const storefrontApi = async <T>(
     customDomain?: string, // Used ONLY for the connection tester
     customToken?: string   // Used ONLY for the connection tester
 ): Promise<T> => {
-    const isTestConnection = customDomain && customToken;
+    // Prioritize credentials passed for testing, otherwise use the config file.
+    const domain = customDomain || SHOPIFY_STORE_DOMAIN;
+    const token = customToken || SHOPIFY_STOREFRONT_ACCESS_TOKEN;
+    const isTestConnection = !!(customDomain && customToken);
 
-    // Use the proxy for all standard app operations.
-    // Use the direct Shopify endpoint ONLY for the connection tester.
-    const endpoint = isTestConnection
-        ? `https://${customDomain}/api/2024-04/graphql.json`
-        : '/.netlify/functions/shopify';
+    // If not a test connection, check for placeholder credentials to give a clear error.
+    if (!isTestConnection && (domain.includes('your-store-name') || token.includes('your-storefront-access-token'))) {
+      const helpfulError = "Shopify API call failed: Default placeholder credentials are still in use. Please update `config.ts` with your actual Shopify store domain and storefront access token, or test new credentials on the About page.";
+      console.error(helpfulError);
+      throw new Error(helpfulError);
+    }
+    
+    const endpoint = `https://${domain}/api/2024-04/graphql.json`;
     
     const options: RequestInit = {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
+            'X-Shopify-Storefront-Access-Token': token,
         },
         body: JSON.stringify({ query, variables }),
     };
-
-    // If it's a test connection, add the access token header directly.
-    if (isTestConnection) {
-        (options.headers as Record<string,string>)['X-Shopify-Storefront-Access-Token'] = customToken;
-    }
 
     try {
         const response = await fetch(endpoint, options);
@@ -58,8 +60,8 @@ const storefrontApi = async <T>(
         return json.data;
     } catch (error: any) {
         console.error("Shopify API call failed:", error);
-        const message = isTestConnection ? "Failed to communicate with Shopify directly." : "Failed to communicate with the shop proxy.";
-        throw new Error(`${message} Check your network connection. ${error.message}.`);
+        const message = `Failed to fetch from Shopify API at ${domain}.`;
+        throw new Error(`${message} Check your network connection, CORS settings, and Shopify credentials. ${error.message}.`);
     }
 };
 

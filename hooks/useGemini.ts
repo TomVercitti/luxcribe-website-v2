@@ -19,7 +19,8 @@ const useGemini = () => {
     try {
       const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
       const response = await ai.models.generateImages({
-        model: 'imagen-3.0-generate-002',
+        // FIX: Updated deprecated model to the recommended one for image generation.
+        model: 'imagen-4.0-generate-001',
         prompt: `A clean, simple, single-color, black and white, vector-style line art suitable for laser engraving on an Xtool S1. The design should be bold and clear with no shading or fine details. Subject: ${prompt}`,
         config: {
           numberOfImages: 4,

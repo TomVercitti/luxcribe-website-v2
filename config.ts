@@ -27,11 +27,11 @@
  * Your Shopify store's unique domain.
  * @example 'my-awesome-store.myshopify.com'
  */
-export const SHOPIFY_STORE_DOMAIN = 'your-store-name.myshopify.com';
+export const SHOPIFY_STORE_DOMAIN = 'luxcribe.myshopify.com';
 
 /**
  * Your Shopify Storefront API access token.
  * This is a public token, but it should be treated with care.
  * @example 'shpat_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx'
  */
-export const SHOPIFY_STOREFRONT_ACCESS_TOKEN = 'your-storefront-access-token';
+export const SHOPIFY_STOREFRONT_ACCESS_TOKEN = '1a750a6e9f32c3f35b53e6b796956bde';

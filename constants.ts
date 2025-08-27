@@ -164,15 +164,31 @@ export const customerGalleryItems = [
 
 export const IMAGE_FEE_PRODUCT_VARIANT_ID = 'gid://shopify/ProductVariant/46968633426165';
 
+export const PRODUCT_FILTERS = {
+  type: ['customizable', 'ready-made'],
+  material: ['slate', 'leather', 'metal', 'wood', 'glass'],
+  occasion: ['wedding', 'pets', 'corporate', 'gifts'],
+};
+
+export const PRICE_FILTERS = [
+  { label: 'Any Price', value: 'all' },
+  { label: 'Under $25', value: '0-25' },
+  { label: '$25 to $50', value: '25-50' },
+  { label: 'Over $50', value: '50-99999' },
+];
+
 
 export const productCatalog: { [key: string]: Product } = {
   // Drinkware & Barware
   'slate-coasters': {
     id: 'slate-coasters',
-    name: 'Slate Coasters',
+    name: 'Slate Coasters (Customizable)',
     category: 'Drinkware & Barware',
     description: 'Natural slate coasters, perfect for protecting surfaces with a rustic, elegant touch. Personalize them with a logo, monogram, or custom design. Each coaster has padded feet to prevent scratching.',
     basePrice: 12.99, // This is a FALLBACK price. The actual price is fetched live from Shopify.
+    tags: ['slate', 'wedding', 'corporate', 'gifts'],
+    createdAt: '2023-10-26T10:00:00Z',
+    type: 'customizable',
     variations: [
       { 
         id: 'slate-coaster-circle', 
@@ -208,50 +224,35 @@ export const productCatalog: { [key: string]: Product } = {
       }
     ]
   },
-  /*
-  'tumbler': {
-    id: 'tumbler',
-    name: '20oz Insulated Tumbler',
+  'whiskey-glass-best-dad': {
+    id: 'whiskey-glass-best-dad',
+    name: '"Best Dad Ever" Whiskey Glass',
     category: 'Drinkware & Barware',
-    description: 'Keep your drinks at the perfect temperature for hours. This powder-coated stainless steel tumbler is durable, stylish, and ready for your custom design. Includes a clear, spill-resistant lid.',
-    basePrice: 25.00,
+    type: 'ready-made',
+    description: 'A classic heavy-base rocks glass, pre-engraved with "Best Dad Ever". The perfect gift for Father\'s Day, birthdays, or any special occasion. Ready to ship.',
+    basePrice: 22.00,
+    tags: ['glass', 'gifts', 'ready-made'],
+    createdAt: '2024-05-01T10:00:00Z',
     variations: [
-      { id: 'tumbler-black', name: 'Matte Black', colorHex: '#2f2f2f', material: 'metal', mockupImage: 'https://storage.googleapis.com/gemini-ui-params/f929f225-b4f0-4a87-a2f0-111e13a0c511.png', variantId: 'gid://shopify/ProductVariant/46958815379701', engravingZones: [{id: 'front', name: 'Front', bounds: { x: 250, y: 150, width: 300, height: 300 }}] },
-      { id: 'tumbler-white', name: 'White', colorHex: '#ffffff', material: 'metal', mockupImage: 'https://storage.googleapis.com/gemini-ui-params/40960010-344f-406a-a82a-2831b8c08973.png', variantId: 'gid://shopify/ProductVariant/46958815412469', engravingZones: [{id: 'front', name: 'Front', bounds: { x: 250, y: 150, width: 300, height: 300 }}] },
-      { id: 'tumbler-blue', name: 'Navy Blue', colorHex: '#0d2d4e', material: 'metal', mockupImage: 'https://storage.googleapis.com/gemini-ui-params/56b7c0d2-0158-45b7-a3f1-d10100414605.png', variantId: 'gid://shopify/ProductVariant/46958815445237', engravingZones: [{id: 'front', name: 'Front', bounds: { x: 250, y: 150, width: 300, height: 300 }}] },
-    ],
-  },
-  */
-  /*
-  'whiskey-glass': {
-    id: 'whiskey-glass',
-    name: 'Engraved Whiskey Glass',
-    category: 'Drinkware & Barware',
-    description: 'A classic heavy-base rocks glass, perfect for whiskey or cocktails. Add a monogram, name, or logo for a sophisticated touch.',
-    basePrice: 18.00,
-    variations: [
-      { id: 'whiskey-glass-standard', name: '11oz Rocks Glass', material: 'glass', mockupImage: 'https://storage.googleapis.com/gemini-ui-params/8a728b9c-2b28-48b8-a664-9a8c7b848c9c.png', variantId: 'gid://shopify/ProductVariant/45000000000004', engravingZones: [{ id: 'front', name: 'Front', bounds: { x: 275, y: 200, width: 250, height: 200 } }] }
+      { 
+        id: 'whiskey-glass-best-dad-standard', 
+        name: '11oz Rocks Glass', 
+        material: 'glass', 
+        mockupImage: 'https://storage.googleapis.com/gemini-ui-params/12431a4f-d096-41f2-8c85-a9a3f2b6e159.png', 
+        variantId: 'gid://shopify/ProductVariant/46974584226037', // Example, replace with real ID
+        engravingZones: [] // No engraving zones for ready-made items
+      }
     ]
   },
-  // Cutting Boards & Kitchenware
-  'cutting-board': {
-    id: 'cutting-board',
-    name: 'Bamboo Cutting Board',
-    category: 'Cutting Boards & Kitchenware',
-    description: 'A durable and eco-friendly bamboo cutting board, perfect for chopping or as a serving platter. Personalize it with a name, date, or custom design.',
-    basePrice: 35.00,
-    variations: [
-      { id: 'cutting-board-large', name: 'Large (15" x 11")', material: 'wood', mockupImage: 'https://storage.googleapis.com/gemini-ui-params/aa4f63c8-5014-4171-a477-8c38686d1a10.png', variantId: 'gid://shopify/ProductVariant/45000000000005', engravingZones: [{ id: 'front', name: 'Front', bounds: { x: 100, y: 100, width: 600, height: 400 } }] }
-    ]
-  },
-  */
-  // Keychains & Accessories
   'leather-key-organizer': {
     id: 'leather-key-organizer',
-    name: 'Leather Key Organizer',
+    name: 'Leather Key Organizer (Customizable)',
     category: 'Keychains & Accessories',
     description: 'A smart and stylish leather keychain to keep your keys organized and protected. Personalize it with your initials, a name, or a small logo.',
     basePrice: 27.99, // This is a FALLBACK price. The actual price is fetched live from Shopify.
+    tags: ['leather', 'corporate', 'pets', 'gifts'],
+    createdAt: '2023-11-15T12:00:00Z',
+    type: 'customizable',
     variations: [
       { 
         id: 'leather-key-organizer-black', 
@@ -293,10 +294,13 @@ export const productCatalog: { [key: string]: Product } = {
   },
   'metal-business-cards': {
     id: 'metal-business-cards',
-    name: 'Metal Company/Business Cards (50 pack)',
+    name: 'Metal Business Cards (Customizable)',
     category: 'Office & Stationery',
     description: 'Make a lasting impression with premium, laser-engraved metal business cards. Durable, unique, and fully customizable on both sides. This pack includes 50 cards.',
     basePrice: 37.99,
+    tags: ['metal', 'corporate'],
+    createdAt: '2024-01-20T14:30:00Z',
+    type: 'customizable',
     variations: [
       { 
         id: 'mbc-rose-gold', 
@@ -396,30 +400,6 @@ export const productCatalog: { [key: string]: Product } = {
       },
     ]
   },
-  /*
-  // Photo Frames & Albums
-  'photo-frame': {
-    id: 'photo-frame',
-    name: 'Wooden Photo Frame',
-    category: 'Photo Frames & Albums',
-    description: 'A classic wooden photo frame that adds a warm, personal touch to any picture. Engrave a message, date, or name along the bottom or top.',
-    basePrice: 22.00,
-    variations: [
-      { id: 'photo-frame-5x7', name: 'For 5x7 Photo', material: 'wood', mockupImage: 'https://storage.googleapis.com/gemini-ui-params/7f2f116a-0498-4228-a664-d396a84f3e6c.png', variantId: 'gid://shopify/ProductVariant/45000000000011', engravingZones: [{ id: 'bottom', name: 'Bottom Edge', bounds: { x: 150, y: 450, width: 500, height: 80 } }, { id: 'top', name: 'Top Edge', bounds: { x: 150, y: 70, width: 500, height: 80 } }] }
-    ]
-  },
-  // Wedding & Event Items
-  'wedding-sign': {
-    id: 'wedding-sign',
-    name: 'Acrylic Wedding Sign',
-    category: 'Wedding & Event Items',
-    description: 'An elegant clear acrylic sign to welcome your guests, display a menu, or share a seating chart. Engraving creates a beautiful frosted effect.',
-    basePrice: 75.00,
-    variations: [
-      { id: 'wedding-sign-clear', name: '18x24 Clear Acrylic', material: 'glass', mockupImage: 'https://storage.googleapis.com/gemini-ui-params/7f9411e7-f138-4e31-8633-5d518f813a37.png', variantId: 'gid://shopify/ProductVariant/45000000000012', engravingZones: [{ id: 'full', name: 'Full Area', bounds: { x: 100, y: 100, width: 600, height: 400 } }] }
-    ]
-  },
-  */
 };
 
 export const pageContent: PageContent = {

@@ -89,9 +89,9 @@ const CustomFormPage: React.FC = () => {
     <>
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-20">
         <div className="text-center mb-12">
-          <h1 className="text-4xl md:text-5xl font-playfair">Bulk &amp; Custom Quotes</h1>
+          <h1 className="text-4xl md:text-5xl font-playfair">Bring Your Own Item &amp; Bulk Orders</h1>
           <p className="mt-4 text-lg text-gray-300 max-w-3xl mx-auto">
-            Have a large order, a corporate gift inquiry, or a completely unique idea? Fill out the form below, and we'll get back to you with a custom quote.
+            For custom engraving on your own items, corporate gifts, or large orders, please provide the details below for a personalized quote.
           </p>
         </div>
 
