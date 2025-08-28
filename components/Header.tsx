@@ -10,6 +10,7 @@ const Header: React.FC = () => {
   const navLinks = [
     { to: '/', text: 'Home' },
     { to: '/shop', text: 'Shop' },
+    { to: '/coaster-customizer', text: 'Coaster Customizer' },
     { to: '/about', text: 'About' },
     { to: '/custom-form', text: 'Bulk/Custom Quote' },
     { to: '/contact', text: 'Contact' },

@@ -8,5 +8,5 @@ export const featureFlags = {
    * When false, the application uses the original pricing logic.
    * When true, new UI and logic will be activated in the editor.
    */
-  LUXCRIBE_PRICING_ENGINE: false,
+  LUXCRIBE_PRICING_ENGINE: true,
 };

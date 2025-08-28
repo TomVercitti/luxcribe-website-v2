@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState, useMemo, useCallback } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { productCatalog, IMAGE_FEE_PRODUCT_VARIANT_ID, TEXT_ENGRAVING_TIERS } from '../constants';
+import { productCatalog, DYNAMIC_ENGRAVING_FEE_VARIANT_ID } from '../constants';
 import { useCart } from '../context/CartContext';
 import type { PriceDetails, EngravingZone, CartItem, ShopifyProduct } from '../types';
 import { getStyleForMaterial } from '../styles/materialStyles';
@@ -19,9 +19,9 @@ import TextControls from '../components/TextControls';
 import TextEffectsControls from '../components/TextEffectsControls';
 import HistoryControls from '../components/HistoryControls';
 import ArrangeControls from '../components/ArrangeControls';
-import DesignLibrary from '../components/DesignLibrary';
-import AIGenerator from '../components/AIGenerator';
 import { featureFlags } from '../config/featureFlags';
+// FIX: Import the 'UploadGuideModal' component to resolve the 'Cannot find name' error.
+import UploadGuideModal from '../components/UploadGuideModal';
 
 type CanvasState = {
     json: string | null;
@@ -50,12 +50,20 @@ const EditorPage: React.FC = () => {
     const editorContainerRef = useRef<HTMLDivElement>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
     
-    const [priceDetails, setPriceDetails] = useState<PriceDetails>({ base: 0, text: 0, images: 0, total: 0, characterCount: 0 });
+    // State for the new all-in-one calculator
+    const [metafields, setMetafields] = useState<Record<string, any>>({});
+    const [quantity, setQuantity] = useState(1);
+    const [priceDetails, setPriceDetails] = useState<PriceDetails>({
+        base: 0, material: 0, setup: 0, vectorize: 0, photo: 0,
+        engravingCost: 0, extraAreaCost: 0, subtotal: 0,
+        discount: 0, quantity: 1, total: 0
+    });
+    
     const [layers, setLayers] = useState<any[]>([]);
     const [activeObject, setActiveObject] = useState<any>(null);
     const [notification, setNotification] = useState<string | null>(null);
     const [isDisclaimerVisible, setIsDisclaimerVisible] = useState(true);
-    const [isPricingImage, setIsPricingImage] = useState(false);
+    const [isPricing, setIsPricing] = useState(false);
     
     const [zoneStates, setZoneStates] = useState<{ [key: string]: CanvasState }>({});
     const [activeZoneId, setActiveZoneId] = useState<string | null>(zoneId || null);
@@ -63,16 +71,11 @@ const EditorPage: React.FC = () => {
     const [isQuoteModalOpen, setIsQuoteModalOpen] = useState(false);
     const [isGuideModalOpen, setIsGuideModalOpen] = useState(false);
     const [shopifyProduct, setShopifyProduct] = useState<ShopifyProduct | null>(null);
-    const [isLoadingPrice, setIsLoadingPrice] = useState(true);
+    const [isLoadingProductData, setIsLoadingProductData] = useState(true);
     const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
 
-
     const isRestoringState = useRef(false);
-
-    // Log feature flag on component mount to verify it's wired up
-    useEffect(() => {
-        console.log('Feature Flag - LUXCRIBE_PRICING_ENGINE is set to:', featureFlags.LUXCRIBE_PRICING_ENGINE);
-    }, []);
+    const pricingTimeoutRef = useRef<number | null>(null);
 
     const productData = useMemo(() => {
         if (!productId || !variationId || !zoneId) return null;
@@ -85,34 +88,98 @@ const EditorPage: React.FC = () => {
         return { product, variation, initialZone };
     }, [productId, variationId, zoneId]);
     
+    const showNotification = (message: string) => {
+        setNotification(message);
+        setTimeout(() => {
+            setNotification(null);
+        }, 5000);
+    };
+
+    // Centralized function to set the background image, wrapped in useCallback for performance.
+    const setBackgroundImage = useCallback(() => {
+        const canvas = fabricRef.current;
+        const variation = productData?.variation;
+        if (!canvas || !variation) return;
+
+        window.fabric.Image.fromURL(variation.mockupImage || '/placeholder.png', (img: any) => {
+            if (img) {
+                const canvasWidth = canvas.getWidth();
+                const canvasHeight = canvas.getHeight();
+                const scale = Math.min(canvasWidth / (img.width || 1), canvasHeight / (img.height || 1));
+
+                canvas.setBackgroundImage(img, canvas.renderAll.bind(canvas), {
+                    scaleX: scale,
+                    scaleY: scale,
+                    left: (canvasWidth - (img.width || 0) * scale) / 2,
+                    top: (canvasHeight - (img.height || 0) * scale) / 2
+                });
+            } else {
+                console.error("Failed to load background image:", variation.mockupImage || '/placeholder.png');
+            }
+        }, { crossOrigin: 'anonymous' });
+    }, [productData]);
+
     useEffect(() => {
         if (productId) {
-            const fetchPrice = async () => {
-                setIsLoadingPrice(true);
+            const fetchProductData = async () => {
+                setIsLoadingProductData(true);
                 try {
                     const results = await fetchProductsByHandles([productId]);
                     if (results.length > 0) {
                         setShopifyProduct(results[0]);
+                    } else {
+                        throw new Error("Product not found via Shopify API.");
                     }
-                } catch (error) {
-                    console.error("Failed to fetch Shopify product:", error);
+                } catch (error: any) {
+                    console.error("Failed to fetch Shopify product data:", error);
+                    showNotification(`Error: Could not load product data. ${error.message}`);
                 } finally {
-                    setIsLoadingPrice(false);
+                    setIsLoadingProductData(false);
                 }
             };
-            fetchPrice();
+            fetchProductData();
         }
     }, [productId]);
+
+    // This effect processes metafields once the shopifyProduct is loaded.
+    // It replaces the need for a separate Netlify function call.
+    useEffect(() => {
+        if (!shopifyProduct) return;
+
+        try {
+            const mf: Record<string, any> = {};
+            // Check if metafields exist. If not, it could be a permissions issue on the Storefront token.
+            if (shopifyProduct.engravingMetafields && shopifyProduct.engravingMetafields.length > 0) {
+                 shopifyProduct.engravingMetafields
+                    .filter(metafield => metafield) // Filter out nulls
+                    .forEach((metafield) => {
+                        if (metafield.type && (metafield.type.includes("decimal") || metafield.type.includes("integer"))) {
+                            mf[metafield.key] = parseFloat(metafield.value);
+                        } else if (metafield.type === "json") {
+                            try {
+                               mf[metafield.key] = JSON.parse(metafield.value);
+                            } catch(e) { console.error(`Failed to parse JSON for metafield ${metafield.key}:`, e) }
+                        } else {
+                            mf[metafield.key] = metafield.value;
+                        }
+                    });
+            } else {
+                console.warn("No engraving metafields found for this product. Pricing engine will use defaults. Check Storefront API token permissions for metafields.");
+            }
+            setMetafields(mf);
+        } catch (err: any) {
+            console.error("Error parsing metafields:", err);
+            showNotification(`Error: ${err.message || "Could not parse pricing data."}`);
+        }
+    }, [shopifyProduct]);
     
     const isNotConfigured = useMemo(() => {
       if (!productData) return false;
-      // Check the main product, all text tiers, and the image fee product for placeholder IDs.
       return isPlaceholderVariantId(productData.variation.variantId) ||
-             TEXT_ENGRAVING_TIERS.some(tier => isPlaceholderVariantId(tier.variantId)) ||
-             isPlaceholderVariantId(IMAGE_FEE_PRODUCT_VARIANT_ID);
+             isPlaceholderVariantId(DYNAMIC_ENGRAVING_FEE_VARIANT_ID);
     }, [productData]);
 
-    const isCtaDisabled = isNotConfigured || !!initializationError || isPricingImage || isLoadingPrice;
+    const isCtaDisabled = isNotConfigured || !!initializationError || isPricing || isLoadingProductData;
 
     const materialStyle = useMemo(() => 
         getStyleForMaterial(window.fabric, productData?.variation.material || 'default'),
@@ -135,19 +202,85 @@ const EditorPage: React.FC = () => {
             setActiveZoneId(productData.initialZone.id);
         }
     }, [productData]);
-
-    // Effect to set the price once both local data and Shopify data are available
-    useEffect(() => {
-        if (productData && !isLoadingPrice) {
-            let basePrice = productData.product.basePrice; // Fallback
-            const liveVariant = shopifyProduct?.variants.edges.find(e => e.node.id === productData.variation.variantId);
-            if (liveVariant) {
-                basePrice = parseFloat(liveVariant.node.price.amount);
-            }
-            setPriceDetails(prev => ({ ...prev, base: basePrice, total: basePrice + prev.text + prev.images }));
-        }
-    }, [productData, shopifyProduct, isLoadingPrice]);
     
+    // Core pricing calculation logic, runs when metafields, quantity, or designs change.
+    useEffect(() => {
+        if (pricingTimeoutRef.current) {
+            clearTimeout(pricingTimeoutRef.current);
+        }
+
+        pricingTimeoutRef.current = window.setTimeout(() => {
+            if (!productData || !shopifyProduct) return;
+            setIsPricing(true);
+
+            // 1. Calculate total artwork area in mm² from all zones
+            let totalArtworkArea = 0;
+            for (const zone of productData.variation.engravingZones) {
+                const zoneState = zoneStates[zone.id];
+                if (zoneState && zoneState.json) {
+                    const canvasData = JSON.parse(zoneState.json);
+                    const userObjects = canvasData.objects?.filter((obj: any) => obj.data?.userAdded);
+                    if (userObjects) {
+                        for (const obj of userObjects) {
+                            const width_px = (obj.width || 0) * (obj.scaleX || 1);
+                            const height_px = (obj.height || 0) * (obj.scaleY || 1);
+                            const area_px = width_px * height_px;
+                            totalArtworkArea += area_px / (zone.px_per_mm * zone.px_per_mm);
+                        }
+                    }
+                }
+            }
+
+            // 2. Perform price calculation based on user's logic
+            const liveVariant = shopifyProduct.variants.edges.find(e => e.node.id === productData.variation.variantId);
+            const liveBasePrice = liveVariant ? parseFloat(liveVariant.node.price.amount) : productData.product.basePrice;
+
+            let base = liveBasePrice;
+            let material = metafields.material_cost || 0;
+            let setup = totalArtworkArea > 0 ? (metafields.setup_fee || 0) : 0;
+            let vectorize = metafields.vectorize_fee || 0;
+            let photo = metafields.photo_fee || 0;
+
+            let engravingTime = (totalArtworkArea / (metafields.engraving_rate_mm2_per_min || 1)) + (metafields.base_time_overhead_min || 0);
+            let engravingCost = engravingTime * (metafields.labour_rate_per_min || 0);
+
+            let extraAreaCost = Math.max(0, totalArtworkArea - (metafields.included_area_mm2 || 0)) * (metafields.area_rate || 0);
+            
+            let subtotal = base + material + setup + vectorize + photo + engravingCost + extraAreaCost;
+            if (totalArtworkArea > 0) {
+                 subtotal = Math.max(subtotal, metafields.min_charge || 0);
+            }
+
+            let discount = 0;
+            if (metafields.bulk_tiers && Array.isArray(metafields.bulk_tiers)) {
+                metafields.bulk_tiers.forEach((tier: {min: number; discount: number}) => {
+                    if (quantity >= tier.min) discount = Math.max(discount, tier.discount);
+                });
+            }
+            
+            let totalAfterDiscount = subtotal * quantity * (1 - discount);
+
+            if (metafields.quickbuy_fixed_price) {
+                totalAfterDiscount = metafields.quickbuy_fixed_price * quantity;
+            }
+
+            // 3. Set final price details
+            setPriceDetails({
+                base, material, setup, vectorize, photo, engravingCost, extraAreaCost,
+                subtotal, discount, quantity, total: totalAfterDiscount
+            });
+            setIsPricing(false);
+        }, 500); // 500ms debounce
+
+        return () => {
+            if (pricingTimeoutRef.current) {
+                clearTimeout(pricingTimeoutRef.current);
+            }
+        };
+
+    }, [metafields, quantity, zoneStates, productData, shopifyProduct]);
+
+
     const updateHistory = useCallback((canvas: any) => {
         if (isRestoringState.current || !activeZoneId) return;
 
@@ -159,7 +292,6 @@ const EditorPage: React.FC = () => {
             if (newHistory[newHistory.length - 1] === newCanvasState) {
                 return prev;
             }
-
             newHistory.push(newCanvasState);
 
             return {
@@ -173,76 +305,24 @@ const EditorPage: React.FC = () => {
         });
     }, [activeZoneId]);
 
-    const updateLayersAndPrice = useCallback(() => {
+    const updateLayersAndState = useCallback(() => {
         if (!fabricRef.current || !productData) return;
-
         const currentCanvas = fabricRef.current;
 
-        // This is the key part to update the toolbar's view of the active object
         const currentActive = currentCanvas.getActiveObject();
-        if (currentActive && currentActive.data?.userAdded) {
-            setActiveObject(currentActive);
-        } else {
-            setActiveObject(null);
-        }
+        setActiveObject(currentActive && currentActive.data?.userAdded ? currentActive : null);
 
         const userObjects = currentCanvas.getObjects().filter((obj: any) => obj.data?.userAdded).reverse();
         setLayers(userObjects);
 
-        const updatedZoneStates = { ...zoneStates };
-        if (activeZoneId && fabricRef.current) {
+        if (activeZoneId) {
             const json = JSON.stringify(fabricRef.current.toJSON(['data']));
-            updatedZoneStates[activeZoneId] = { ...updatedZoneStates[activeZoneId], json };
+            setZoneStates(prev => {
+                if(prev[activeZoneId]?.json === json) return prev; // Avoid unnecessary updates
+                return { ...prev, [activeZoneId]: { ...prev[activeZoneId], json } };
+            });
         }
-        
-        // Calculate price across ALL zones based on character count and image presence
-        let totalCharacterCount = 0;
-        let totalImageFee = 0;
-
-        Object.values(updatedZoneStates).forEach(state => {
-            if (state.json) {
-                try {
-                    const canvasData = JSON.parse(state.json);
-                    if (canvasData && canvasData.objects) {
-                        for (const obj of canvasData.objects) {
-                            if (obj.data?.userAdded) {
-                                if (obj.type === 'textbox' && obj.text?.length > 0) {
-                                    totalCharacterCount += obj.text.length;
-                                } else if ((obj.type === 'image' || obj.type === 'group') && obj.data?.price) {
-                                    totalImageFee += obj.data.price;
-                                }
-                            }
-                        }
-                    }
-                } catch (e) {
-                    console.error("Error parsing zone state for pricing:", e);
-                }
-            }
-        });
-        
-        let textFee = 0;
-        if (totalCharacterCount > 0) {
-            const tier = TEXT_ENGRAVING_TIERS.find(t => totalCharacterCount >= t.min && totalCharacterCount <= t.max);
-            if (tier) {
-                textFee = tier.price;
-            } else {
-                // If over max, show price for max tier but will be blocked at checkout
-                const maxTier = TEXT_ENGRAVING_TIERS[TEXT_ENGRAVING_TIERS.length - 1];
-                 if (totalCharacterCount > maxTier.max) {
-                    textFee = maxTier.price;
-                }
-            }
-        }
-
-        setPriceDetails(prev => ({
-            ...prev,
-            text: textFee,
-            images: totalImageFee,
-            total: prev.base + textFee + totalImageFee,
-            characterCount: totalCharacterCount
-        }));
-        
-    }, [productData, zoneStates, activeZoneId]);
+    }, [productData, activeZoneId]);
 
     const loadZone = useCallback((zone: EngravingZone) => {
         if (!fabricRef.current || !zoneStates[zone.id]) return;
@@ -251,6 +331,10 @@ const EditorPage: React.FC = () => {
         const zoneState = zoneStates[zone.id];
         
         canvas.loadFromJSON(zoneState?.json || null, () => {
+            // FIX: Re-apply the background image. `loadFromJSON` clears the entire canvas,
+            // so the background needs to be reset after loading the objects for the new zone.
+            setBackgroundImage();
+
             const { x, y, width, height } = zone.bounds;
             const clipRect = new window.fabric.Rect({
                 left: x, top: y, width, height,
@@ -274,15 +358,9 @@ const EditorPage: React.FC = () => {
             canvas.renderAll();
             isRestoringState.current = false;
 
-            const currentActive = canvas.getActiveObject();
-             if(currentActive && currentActive.data?.userAdded) {
-                setActiveObject(currentActive);
-            } else {
-                setActiveObject(null);
-            }
-            updateLayersAndPrice();
+            updateLayersAndState();
         });
-    }, [zoneStates, updateLayersAndPrice]);
+    }, [zoneStates, updateLayersAndState, setBackgroundImage]);
 
     const handleSelectZone = (newZoneId: string) => {
         if (newZoneId === activeZoneId || !fabricRef.current) return;
@@ -313,57 +391,16 @@ const EditorPage: React.FC = () => {
         });
         fabricRef.current = canvas;
         
-        // Customize fabric controls globally to ensure a consistent look and feel
         window.fabric.Object.prototype.transparentCorners = false;
         window.fabric.Object.prototype.cornerColor = '#6366f1';
         window.fabric.Object.prototype.cornerStyle = 'circle';
         window.fabric.Object.prototype.borderColor = '#6366f1';
-        // Add a visible rotation control handle that extends from the top of objects
         window.fabric.Object.prototype.controls.mtr.offsetY = -30;
         window.fabric.Object.prototype.controls.mtr.cursorStyle = 'grab';
 
-        const setBackgroundImage = () => {
-          window.fabric.Image.fromURL(productData.variation.mockupImage || '/placeholder.png', (img: any) => {
-              if (img) {
-                  const canvasWidth = canvas.getWidth();
-                  const canvasHeight = canvas.getHeight();
-                  const imgWidth = img.width;
-                  const imgHeight = img.height;
-
-                  const scaleX = canvasWidth / imgWidth;
-                  const scaleY = canvasHeight / imgHeight;
-                  const scale = Math.min(scaleX, scaleY);
-
-                  canvas.setBackgroundImage(img, canvas.renderAll.bind(canvas), {
-                      scaleX: scale,
-                      scaleY: scale,
-                      left: (canvasWidth - imgWidth * scale) / 2,
-                      top: (canvasHeight - imgHeight * scale) / 2
-                  });
-              } else {
-                  console.error("Failed to load background image:", productData.variation.mockupImage || '/placeholder.png');
-              }
-          });
-        };
-        setBackgroundImage();
-        
-        const updateCallback = () => {
-            const currentActive = canvas.getActiveObject();
-            if(currentActive && currentActive.data?.userAdded) {
-                setActiveObject(currentActive);
-            } else {
-                setActiveObject(null);
-            }
-            if(activeZoneId && !isRestoringState.current) {
-                const json = canvas.toJSON(['data']);
-                 setZoneStates(prev => ({ ...prev, [activeZoneId]: { ...prev[activeZoneId], json: JSON.stringify(json) } }));
-            }
-            updateLayersAndPrice();
-        }
-
         const historyCallback = () => {
             updateHistory(canvas);
-            updateCallback();
+            updateLayersAndState();
         }
         
         canvas.on({
@@ -371,9 +408,6 @@ const EditorPage: React.FC = () => {
             'object:removed': historyCallback,
             'object:modified': (e: any) => {
                 const target = e.target;
-                // When a textbox is scaled, we update its font size and width properties
-                // and reset its scale to 1. This provides a more intuitive experience
-                // where the font size in the toolbar always reflects the visual size.
                 if (target && target.isType('textbox') && (target.scaleX !== 1 || target.scaleY !== 1)) {
                     const newFontSize = (target.fontSize || 1) * (target.scaleY || 1);
                     const newWidth = (target.width || 1) * (target.scaleX || 1);
@@ -387,9 +421,9 @@ const EditorPage: React.FC = () => {
                 historyCallback();
             },
             'text:changed': historyCallback,
-            'selection:created': updateCallback,
-            'selection:updated': updateCallback,
-            'selection:cleared': updateCallback,
+            'selection:created': updateLayersAndState,
+            'selection:updated': updateLayersAndState,
+            'selection:cleared': updateLayersAndState,
         });
         
         const handleResize = () => {
@@ -400,11 +434,14 @@ const EditorPage: React.FC = () => {
         };
         window.addEventListener('resize', handleResize);
 
+        // Initial background image set on canvas creation.
+        setBackgroundImage();
+
         return () => {
             window.removeEventListener('resize', handleResize);
             canvas.dispose();
         };
-    }, [productData, updateLayersAndPrice, updateHistory]);
+    }, [productData, updateLayersAndState, updateHistory, setBackgroundImage]);
     
     // Effect to load zone data when active zone changes
     useEffect(() => {
@@ -437,14 +474,7 @@ const EditorPage: React.FC = () => {
             canvas.clipPath = clipRect;
             canvas.renderAll();
             
-            updateLayersAndPrice();
-            const currentActive = canvas.getActiveObject();
-             if(currentActive && currentActive.data?.userAdded) {
-                setActiveObject(currentActive);
-            } else {
-                setActiveObject(null);
-            }
-
+            updateLayersAndState();
             isRestoringState.current = false;
         });
     }
@@ -469,24 +499,19 @@ const EditorPage: React.FC = () => {
         }
     }
 
-    const showNotification = (message: string) => {
-        setNotification(message);
-        setTimeout(() => {
-            setNotification(null);
-        }, 5000);
-    };
-
     const addObjectToCanvas = (obj: any) => {
         if (!fabricRef.current || !activeZone) return;
         const canvas = fabricRef.current;
         const zone = activeZone.bounds;
 
-        // Apply material-specific styles
         if (obj.isType('textbox') || obj.isType('group')) {
             obj.set({ fill: materialStyle.fill });
             if (obj.isType('group')) {
                 obj.forEachObject((el: any) => el.set({ fill: materialStyle.fill }));
             }
+        } else if (obj.isType('image')) {
+            obj.filters = [...materialStyle.imageFilters];
+            obj.applyFilters();
         }
         
         obj.set({
@@ -509,55 +534,24 @@ const EditorPage: React.FC = () => {
         canvas.add(obj);
         canvas.setActiveObject(obj);
         canvas.renderAll();
+        // FIX: Manually trigger a state update. Programmatic actions like `add` and
+        // `setActiveObject` don't always trigger the selection events needed to
+        // update the React UI state. This ensures the UI reflects the new active object.
+        updateLayersAndState();
     };
-    
-    const priceAndAddImage = async (imageData: string, type: 'svg' | 'png') => {
-        setIsPricingImage(true);
-        showNotification("Calculating engraving price for image...");
 
-        try {
-            const response = await fetch('/.netlify/functions/image-pricing', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ imageData }),
-            });
-
-            if (!response.ok) {
-                const errorData = await response.json();
-                throw new Error(errorData.error || 'Failed to get pricing from server.');
+    const addImageToCanvas = (imageData: string, type: 'svg' | 'png') => {
+        const createObject = (callback: (obj: any) => void) => {
+            if (type === 'svg') {
+                window.fabric.loadSVGFromString(imageData, (objects: any[], options: any) => {
+                    callback(window.fabric.util.groupSVGElements(objects, options));
+                });
+            } else {
+                window.fabric.Image.fromURL(imageData, callback);
             }
-            
-            const { price } = await response.json();
-
-            const createObject = (callback: (obj: any) => void) => {
-                if (type === 'svg') {
-                    window.fabric.loadSVGFromString(imageData, (objects: any[], options: any) => {
-                        const obj = window.fabric.util.groupSVGElements(objects, options);
-                        callback(obj);
-                    });
-                } else {
-                    window.fabric.Image.fromURL(imageData, (img: any) => {
-                        img.filters = [...materialStyle.imageFilters];
-                        img.applyFilters();
-                        callback(img);
-                    });
-                }
-            };
-            
-            createObject((fabricObject: any) => {
-                fabricObject.set('data', { userAdded: true, type: fabricObject.type, price: price });
-                addObjectToCanvas(fabricObject);
-                showNotification(`Image added! Engraving fee: $${price.toFixed(2)}`);
-            });
-
-        } catch (error: any) {
-            console.error("Image processing error:", error);
-            showNotification(`Error: ${error.message || "Could not process the image."}`);
-        } finally {
-            setIsPricingImage(false);
-        }
+        };
+        createObject(addObjectToCanvas);
     };
-
 
     const addText = (textValue: string = 'Your Text') => {
         const text = new window.fabric.Textbox(textValue, {
@@ -571,7 +565,7 @@ const EditorPage: React.FC = () => {
 
     const addTextWithQuote = (quote: string) => {
         addText(quote);
-        setIsQuoteModalOpen(false); // Close modal after adding
+        setIsQuoteModalOpen(false);
     };
     
     const modifyActiveObject = (props: { [key: string]: any }) => {
@@ -579,9 +573,27 @@ const EditorPage: React.FC = () => {
         activeObject.set(props);
         fabricRef.current.renderAll();
         updateHistory(fabricRef.current);
-        updateLayersAndPrice();
+        updateLayersAndState();
     }
     
+    const handleToggleTextStyle = (style: 'bold' | 'italic' | 'underline') => {
+        if (!activeObject?.isType('textbox')) return;
+
+        let newProps: any = {};
+        switch (style) {
+            case 'bold':
+                newProps.fontWeight = activeObject.fontWeight === 'bold' ? 'normal' : 'bold';
+                break;
+            case 'italic':
+                newProps.fontStyle = activeObject.fontStyle === 'italic' ? 'normal' : 'italic';
+                break;
+            case 'underline':
+                newProps.underline = !activeObject.underline;
+                break;
+        }
+        modifyActiveObject(newProps);
+    };
+
     const handleArrange = (direction: 'front' | 'back' | 'forward' | 'backward') => {
         if (!activeObject || !fabricRef.current) return;
         const canvas = fabricRef.current;
@@ -603,10 +615,6 @@ const EditorPage: React.FC = () => {
         updateHistory(canvas);
     };
 
-    const handleAiImageSelect = (imageData: string) => {
-        priceAndAddImage(imageData, 'png');
-    };
-
     const handleTextCurveChange = (curve: number) => {
         if (activeObject?.isType('textbox')) {
             const data = activeObject.data || {};
@@ -616,9 +624,7 @@ const EditorPage: React.FC = () => {
                 activeObject.set('path', null);
             } else {
                 const width = activeObject.width;
-                // This formula creates a reasonable arc radius based on the slider value and text width
                 const radius = (width * 5) / (curve / 10);
-                // An SVG path definition for an arc
                 const pathData = curve > 0 
                     ? `M 0 ${-radius} A ${radius} ${radius} 0 0 1 ${width} ${-radius}`
                     : `M 0 ${radius} A ${radius} ${radius} 0 0 0 ${width} ${radius}`;
@@ -632,80 +638,35 @@ const EditorPage: React.FC = () => {
             }
             fabricRef.current.renderAll();
             updateHistory(fabricRef.current);
-            updateLayersAndPrice();
+            updateLayersAndState();
         }
     }
     
-    const MAX_FILE_SIZE_MB = 4; // Reduced to account for base64 overhead and Netlify's 6MB limit
+    const MAX_FILE_SIZE_MB = 4;
     const MAX_FILE_SIZE_BYTES = MAX_FILE_SIZE_MB * 1024 * 1024;
-    const MAX_PNG_DIMENSION = 2000;
-    const MAX_SVG_ELEMENTS = 10000;
 
     const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
-        const fileInput = e.target; // Keep a reference to clear it later
+        const fileInput = e.target;
 
         if (!file) return;
 
-        // 1. File Type Validation
-        const allowedTypes = ['image/png', 'image/svg+xml'];
-        if (!allowedTypes.includes(file.type)) {
+        if (!['image/png', 'image/svg+xml'].includes(file.type)) {
             showNotification(`Error: Invalid file type. Please upload a .png or .svg file.`);
-            fileInput.value = ''; // Clear input on error
+            fileInput.value = '';
             return;
         }
 
-        // 2. File Size Validation
         if (file.size > MAX_FILE_SIZE_BYTES) {
             showNotification(`Error: File is too large. Maximum size is ${MAX_FILE_SIZE_MB}MB.`);
-            fileInput.value = ''; // Clear input on error
-            return;
-        }
-        
-        // Asynchronous validation logic
-        try {
-            if (file.type === 'image/png') {
-                // 3. PNG Resolution Check (Warning)
-                const dimensions = await new Promise<{ width: number; height: number }>((resolve, reject) => {
-                    const reader = new FileReader();
-                    reader.onload = (event) => {
-                        const img = new Image();
-                        img.onload = () => resolve({ width: img.width, height: img.height });
-                        img.onerror = reject;
-                        img.src = event.target?.result as string;
-                    };
-                    reader.onerror = reject;
-                    reader.readAsDataURL(file);
-                });
-
-                if (dimensions.width > MAX_PNG_DIMENSION || dimensions.height > MAX_PNG_DIMENSION) {
-                    showNotification(`Warning: Image is large (${dimensions.width}x${dimensions.height}px). High detail may not engrave well.`);
-                }
-            }
-
-            if (file.type === 'image/svg+xml') {
-                // 4. SVG Complexity Check (Warning)
-                const svgContent = await file.text();
-                // Count path, shape, and text elements as a proxy for complexity
-                const elementMatches = svgContent.match(/<(path|rect|circle|ellipse|line|polyline|polygon|text)/g);
-                const elementCount = elementMatches ? elementMatches.length : 0;
-
-                if (elementCount > MAX_SVG_ELEMENTS) {
-                    showNotification(`Warning: SVG is complex (${elementCount} elements). Intricate designs may not engrave cleanly.`);
-                }
-            }
-        } catch (error) {
-            console.error("Error during file validation:", error);
-            showNotification("An error occurred while reading the file.");
-            fileInput.value = ''; // Clear input on error
+            fileInput.value = '';
             return;
         }
 
-        // If all checks pass (or are just warnings), proceed with pricing and adding to canvas
         const reader = new FileReader();
         reader.onload = (f) => {
             const data = f.target?.result as string;
-            priceAndAddImage(data, file.type === 'image/svg+xml' ? 'svg' : 'png');
+            addImageToCanvas(data, file.type === 'image/svg+xml' ? 'svg' : 'png');
         };
 
         if (file.type === 'image/svg+xml') {
@@ -714,13 +675,8 @@ const EditorPage: React.FC = () => {
             reader.readAsDataURL(file);
         }
         
-        fileInput.value = ''; // Clear the input so the same file can be selected again
+        fileInput.value = '';
     };
-
-
-    const addFromLibrary = (svgString: string) => {
-        priceAndAddImage(svgString, 'svg');
-    }
 
     const deleteLayer = (layer: any) => {
         fabricRef.current?.remove(layer);
@@ -731,12 +687,15 @@ const EditorPage: React.FC = () => {
     const selectLayer = (layer: any) => {
         fabricRef.current?.setActiveObject(layer);
         fabricRef.current?.renderAll();
+        // FIX: Similar to addObjectToCanvas, manually trigger a state update when
+        // a layer is selected programmatically to ensure the UI controls update.
+        updateLayersAndState();
     }
 
     const handleAddToCart = async () => {
         if (!productData || isCtaDisabled) return;
 
-        setIsPricingImage(true); // Re-use this for "adding to cart" state
+        setIsPricing(true);
         showNotification("Preparing your design for the cart...");
 
         try {
@@ -746,27 +705,12 @@ const EditorPage: React.FC = () => {
             let finalPreviewImage = '';
             const customizedZones: string[] = [];
 
-            // 1. Process all zones and generate a composite preview
             const canvasForPreview = new window.fabric.StaticCanvas(null, {
                 width: fabricRef.current.width,
                 height: fabricRef.current.height,
             });
 
-            // Set the product mockup as the background
-            await new Promise<void>(resolve => {
-                window.fabric.Image.fromURL(variation.mockupImage, (img: any) => {
-                    const canvasWidth = canvasForPreview.getWidth();
-                    const canvasHeight = canvasForPreview.getHeight();
-                    const scale = Math.min(canvasWidth / (img.width || 1), canvasHeight / (img.height || 1));
-                    canvasForPreview.setBackgroundImage(img, () => resolve(), {
-                        scaleX: scale,
-                        scaleY: scale,
-                        left: (canvasWidth - (img.width || 0) * scale) / 2,
-                        top: (canvasHeight - (img.height || 0) * scale) / 2,
-                    });
-                });
-            });
-
+            // Collect all user-added objects from all zones
             const allZoneObjects: any[] = [];
             for (const zone of variation.engravingZones) {
                 const zoneState = zoneStates[zone.id];
@@ -780,22 +724,35 @@ const EditorPage: React.FC = () => {
                 }
             }
             
-            // Render all objects onto the preview canvas
-            if (allZoneObjects.length > 0) {
-                 await new Promise<void>(resolve => {
-                    canvasForPreview.loadFromJSON({ objects: allZoneObjects }, () => {
-                        canvasForPreview.renderAll();
-                        resolve();
-                    });
+            // FIX: Correctly generate the preview by loading objects first, then setting the background.
+            // This ensures the background isn't cleared by `loadFromJSON`.
+            const jsonToLoad = { objects: allZoneObjects };
+            await new Promise<void>(resolve => {
+                canvasForPreview.loadFromJSON(jsonToLoad, () => {
+                    window.fabric.Image.fromURL(variation.mockupImage, (img: any) => {
+                        if (!img) { resolve(); return; }
+                        
+                        const canvasWidth = canvasForPreview.getWidth();
+                        const canvasHeight = canvasForPreview.getHeight();
+                        const scale = Math.min(canvasWidth / (img.width || 1), canvasHeight / (img.height || 1));
+                        
+                        canvasForPreview.setBackgroundImage(img, () => {
+                            canvasForPreview.renderAll();
+                            resolve(); // Resolve after background is set and rendered
+                        }, {
+                            scaleX: scale, scaleY: scale,
+                            left: (canvasWidth - (img.width || 0) * scale) / 2,
+                            top: (canvasHeight - (img.height || 0) * scale) / 2,
+                        });
+                    }, { crossOrigin: 'anonymous' });
                 });
-            }
+            });
 
             finalPreviewImage = canvasForPreview.toDataURL({ format: 'png', quality: 0.8 });
             
-            // 2. Main Product Item
             itemsToAdd.push({
                 merchandiseId: variation.variantId,
-                quantity: 1,
+                quantity: priceDetails.quantity,
                 attributes: [
                     { key: '_isCustomizedParent', value: 'true' },
                     { key: '_customizationBundleId', value: customizationBundleId },
@@ -805,37 +762,21 @@ const EditorPage: React.FC = () => {
                 ],
             });
 
-            // 3. Text Engraving Fee Item
-            if (priceDetails.text > 0 && priceDetails.characterCount > 0) {
-                const tier = TEXT_ENGRAVING_TIERS.find(t => priceDetails.characterCount >= t.min && priceDetails.characterCount <= t.max);
-                if (tier) {
-                    itemsToAdd.push({
-                        merchandiseId: tier.variantId,
-                        quantity: 1,
-                        attributes: [
-                            { key: '_isCustomizationFee', value: 'true' },
-                            { key: '_customizationBundleId', value: customizationBundleId },
-                            { key: 'Fee For', value: `${product.name} (${variation.name})` }
-                        ],
-                    });
-                }
-            }
+            const totalCustomFee = priceDetails.total - (priceDetails.base * priceDetails.quantity);
 
-            // 4. Image Engraving Fee Item
-            if (priceDetails.images > 0) {
+            // Add the fee using a $1.00 product where quantity = the fee amount
+            if (totalCustomFee > 0.01) {
                  itemsToAdd.push({
-                    merchandiseId: IMAGE_FEE_PRODUCT_VARIANT_ID,
-                    quantity: 1,
+                    merchandiseId: DYNAMIC_ENGRAVING_FEE_VARIANT_ID,
+                    quantity: Math.round(totalCustomFee),
                     attributes: [
                         { key: '_isCustomizationFee', value: 'true' },
                         { key: '_customizationBundleId', value: customizationBundleId },
-                        { key: 'Fee For', value: `${product.name} (${variation.name})` },
-                        { key: 'Engraving Fee', value: priceDetails.images.toFixed(2) }
+                        { key: 'Fee For', value: `${product.name} (${variation.name})` }
                     ],
                 });
             }
 
-            // 5. Add to cart
             if (itemsToAdd.length > 0) {
                 await addToCart(itemsToAdd);
             }
@@ -844,7 +785,7 @@ const EditorPage: React.FC = () => {
             console.error("Failed to add customized item to cart:", error);
             showNotification(`Error: ${error.message || "Could not add to cart."}`);
         } finally {
-            setIsPricingImage(false);
+            setIsPricing(false);
         }
     };
     
@@ -888,6 +829,8 @@ const EditorPage: React.FC = () => {
                                     onAddText={addText}
                                     onFontChange={(font) => modifyActiveObject({ fontFamily: font })}
                                     onTextAlign={(align) => modifyActiveObject({ textAlign: align })}
+                                    onFontSizeChange={(size) => modifyActiveObject({ fontSize: size })}
+                                    onToggleTextStyle={handleToggleTextStyle}
                                     activeObject={activeObject}
                                 />
                                 <TextEffectsControls 
@@ -902,7 +845,14 @@ const EditorPage: React.FC = () => {
                 ) : (
                     <>
                         {/* Content Creation Tools */}
-                        <TextControls onAddText={addText} onFontChange={()=>{}} onTextAlign={()=>{}} activeObject={null} />
+                        <TextControls 
+                            onAddText={addText} 
+                            onFontChange={()=>{}} 
+                            onTextAlign={()=>{}} 
+                            onFontSizeChange={() => {}}
+                            onToggleTextStyle={() => {}}
+                            activeObject={null} 
+                        />
                         <div className="mb-4 p-3 bg-gray-900 rounded-lg space-y-2">
                              <h3 className="font-semibold text-indigo-300">Add Image or Design</h3>
                              <button onClick={() => setIsGuideModalOpen(true)} className="w-full bg-gray-600 hover:bg-gray-700 p-2 rounded text-sm font-semibold">
@@ -913,8 +863,6 @@ const EditorPage: React.FC = () => {
                                 AI Ideas for Text
                             </button>
                         </div>
-                        <DesignLibrary onSelect={addFromLibrary} />
-                        <AIGenerator onImageSelect={handleAiImageSelect} />
                     </>
                 )}
                  
@@ -923,12 +871,15 @@ const EditorPage: React.FC = () => {
             </div>
 
             <div className="p-4 border-t border-gray-700 bg-gray-800/50">
-                {isLoadingPrice ? (
-                    <div className="flex justify-center items-center h-24">
+                {isLoadingProductData ? (
+                    <div className="flex justify-center items-center h-48">
                         <Spinner />
                     </div>
                 ) : (
-                     <PricingBreakdown priceDetails={priceDetails} />
+                     <PricingBreakdown 
+                        priceDetails={priceDetails} 
+                        onQuantityChange={setQuantity}
+                     />
                 )}
                
                 <button 
@@ -936,8 +887,8 @@ const EditorPage: React.FC = () => {
                     disabled={isCtaDisabled}
                     className="w-full mt-4 py-3 px-6 bg-indigo-600 text-white font-semibold rounded-lg hover:bg-indigo-700 transition-colors disabled:bg-gray-600 disabled:cursor-not-allowed flex items-center justify-center text-lg"
                 >
-                    {isPricingImage ? <Spinner className="w-6 h-6 mr-2" /> : <CartIcon className="w-6 h-6 mr-2"/>}
-                    {isPricingImage ? 'Processing...' : 'Add to Cart'}
+                    {isPricing ? <Spinner className="w-6 h-6 mr-2" /> : <CartIcon className="w-6 h-6 mr-2"/>}
+                    {isPricing ? 'Calculating...' : 'Add to Cart'}
                 </button>
                  {isNotConfigured && (
                     <p className="text-xs text-yellow-400 mt-2 text-center">Store not configured. Add to Cart is disabled.</p>
@@ -1021,6 +972,14 @@ const EditorPage: React.FC = () => {
                 isOpen={isQuoteModalOpen}
                 onClose={() => setIsQuoteModalOpen(false)}
                 onSelectQuote={addTextWithQuote}
+            />
+             <UploadGuideModal 
+                isOpen={isGuideModalOpen} 
+                onClose={() => setIsGuideModalOpen(false)} 
+                onProceed={() => {
+                    setIsGuideModalOpen(false);
+                    fileInputRef.current?.click();
+                }}
             />
 
         </div>

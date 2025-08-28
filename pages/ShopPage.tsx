@@ -17,7 +17,7 @@ const ShopPage: React.FC = () => {
   const [sortOption, setSortOption] = useState<string>('default');
   const dropdownsRef = useRef<HTMLDivElement>(null);
 
-  const products = Object.values(productCatalog);
+  const products = useMemo(() => Object.values(productCatalog), []);
   const categories = useMemo(() => ['All', ...new Set(products.map(p => p.category))], [products]);
   const categoryOptions = categories.map(c => ({ label: c, value: c }));
 

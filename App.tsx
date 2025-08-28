@@ -12,6 +12,7 @@ import { CartProvider } from './context/CartContext';
 import CartSidebar from './components/CartSidebar';
 import ProductDetailPage from './pages/ProductDetailPage';
 import AboutPage from './pages/AboutPage';
+import CoasterCustomizerPage from './pages/CoasterCustomizerPage';
 
 const App: React.FC = () => {
   return (
@@ -23,6 +24,7 @@ const App: React.FC = () => {
             <Route path="shop" element={<ShopPage />} />
             <Route path="product/:productId" element={<ProductDetailPage />} />
             <Route path="about" element={<AboutPage />} />
+            <Route path="coaster-customizer" element={<CoasterCustomizerPage />} />
             <Route path="custom-form" element={<CustomFormPage />} />
             <Route path="contact" element={<ContactPage />} />
             {Object.keys(pageContent).map(pageKey => (

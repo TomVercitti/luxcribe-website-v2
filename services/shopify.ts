@@ -3,8 +3,9 @@ import { SHOPIFY_STORE_DOMAIN, SHOPIFY_STOREFRONT_ACCESS_TOKEN } from '../config
 
 /**
  * A generic fetch helper for the Shopify Storefront API.
- * For regular app use, it calls a secure Netlify function proxy.
- * For the connection tester on the About page, it can make a direct call using credentials from config.ts.
+ * It makes direct API calls to Shopify using credentials from config.ts,
+ * which is suitable for local development. For production, ensure CORS is handled
+ * or use a server-side proxy.
  */
 const storefrontApi = async <T>(
     query: string,
@@ -12,31 +13,23 @@ const storefrontApi = async <T>(
     customDomain?: string, // Used ONLY for the connection tester
     customToken?: string   // Used ONLY for the connection tester
 ): Promise<T> => {
-    // Prioritize credentials passed for testing, otherwise use the config file.
+    const isTestConnection = !!(customDomain && customToken);
+    
     const domain = customDomain || SHOPIFY_STORE_DOMAIN;
     const token = customToken || SHOPIFY_STOREFRONT_ACCESS_TOKEN;
-    const isTestConnection = !!(customDomain && customToken);
-
-    // If not a test connection, check for placeholder credentials to give a clear error.
-    if (!isTestConnection && (domain.includes('your-store-name') || token.includes('your-storefront-access-token'))) {
-      const helpfulError = "Shopify API call failed: Default placeholder credentials are still in use. Please update `config.ts` with your actual Shopify store domain and storefront access token, or test new credentials on the About page.";
-      console.error(helpfulError);
-      throw new Error(helpfulError);
-    }
     
     const endpoint = `https://${domain}/api/2024-04/graphql.json`;
-    
-    const options: RequestInit = {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'X-Shopify-Storefront-Access-Token': token,
-        },
-        body: JSON.stringify({ query, variables }),
-    };
 
     try {
-        const response = await fetch(endpoint, options);
+        const response = await fetch(endpoint, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Shopify-Storefront-Access-Token': token,
+            },
+            body: JSON.stringify({ query, variables }),
+        });
+
         const json = await response.json();
 
         if (json.errors) {
@@ -60,8 +53,7 @@ const storefrontApi = async <T>(
         return json.data;
     } catch (error: any) {
         console.error("Shopify API call failed:", error);
-        const message = `Failed to fetch from Shopify API at ${domain}.`;
-        throw new Error(`${message} Check your network connection, CORS settings, and Shopify credentials. ${error.message}.`);
+        throw new Error(`Failed to fetch from Shopify API at ${domain}. Check your network connection, CORS settings, and Shopify credentials. ${error.message}.`);
     }
 };
 
@@ -190,6 +182,24 @@ const productWithVariantsFragment = `
         }
       }
     }
+    engravingMetafields: metafields(identifiers: [
+      {namespace: "engraving", key: "material_cost"},
+      {namespace: "engraving", key: "setup_fee"},
+      {namespace: "engraving", key: "vectorize_fee"},
+      {namespace: "engraving", key: "photo_fee"},
+      {namespace: "engraving", key: "engraving_rate_mm2_per_min"},
+      {namespace: "engraving", key: "base_time_overhead_min"},
+      {namespace: "engraving", key: "labour_rate_per_min"},
+      {namespace: "engraving", key: "included_area_mm2"},
+      {namespace: "engraving", key: "area_rate"},
+      {namespace: "engraving", key: "min_charge"},
+      {namespace: "engraving", key: "bulk_tiers"},
+      {namespace: "engraving", key: "quickbuy_fixed_price"}
+    ]) {
+      key
+      value
+      type
+    }
   }
 `;
 
@@ -212,4 +222,50 @@ export const fetchProductsByHandles = async (handles: string[]): Promise<Shopify
         { query: handlesQueryString }
     );
     return data.products.edges.map(edge => edge.node);
+};
+
+// New fragment and function for fetching 'custom' metafields for the coaster customizer.
+const productWithCustomMetafieldsFragment = `
+  fragment ProductWithCustomMetafields on Product {
+    id
+    handle
+    title
+    variants(first: 1) {
+      edges {
+        node {
+          id
+          price {
+            amount
+            currencyCode
+          }
+        }
+      }
+    }
+    customMetafields: metafields(identifiers: [
+      {namespace: "custom", key: "base_price"},
+      {namespace: "custom", key: "included_area_mm2"},
+      {namespace: "custom", key: "engraving_rate_mm2_per_min"},
+      {namespace: "custom", key: "labour_rate_per_min"},
+      {namespace: "custom", key: "setup_fee"},
+      {namespace: "custom", key: "material_cost"},
+      {namespace: "custom", key: "min_charge"}
+    ]) {
+      key
+      value
+      type
+    }
+  }
+`;
+
+export const fetchProductWithCustomMetafields = async (handle: string): Promise<ShopifyProduct | null> => {
+    const query = `
+        query getProduct($handle: String!) {
+            product(handle: $handle) {
+                ...ProductWithCustomMetafields
+            }
+        }
+        ${productWithCustomMetafieldsFragment}
+    `;
+    const data = await storefrontApi<{ product: ShopifyProduct | null }>(query, { handle });
+    return data.product;
 };

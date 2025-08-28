@@ -3,14 +3,6 @@ import type { Product, PageContent } from './types';
 // NOTE: The 'bounds' for engraving zones are based on a canvas size of roughly 800x600.
 // These values define the rectangular area where users can add their designs.
 
-export const TEXT_ENGRAVING_TIERS = [
-  { min: 1, max: 5, price: 25.00, variantId: 'gid://shopify/ProductVariant/46968651546869' },
-  { min: 6, max: 10, price: 30.00, variantId: 'gid://shopify/ProductVariant/46968707907829' },
-  { min: 11, max: 20, price: 40.00, variantId: 'gid://shopify/ProductVariant/46968711971061' },
-  { min: 21, max: 30, price: 50.00, variantId: 'gid://shopify/ProductVariant/46968712954101' },
-  { min: 31, max: 50, price: 60.00, variantId: 'gid://shopify/ProductVariant/46968714100981' },
-];
-
 export const ENGRAVING_COLORS = [
   { name: 'Deep Black', hex: '#212121' },
   { name: 'Standard Engrave', hex: '#424242' },
@@ -53,35 +45,40 @@ export const FONT_FACES = [
   { name: 'Sacramento', family: 'Sacramento' },
 ];
 
+// FIX: Added missing DESIGN_LIBRARY_ITEMS constant to resolve import error.
 export const DESIGN_LIBRARY_ITEMS = [
   {
     name: 'Heart',
-    svg: `<svg viewBox="0 0 24 24" width="100%" height="100%" fill="currentColor"><path d="M12,21.35L10.55,20.03C5.4,15.36 2,12.27 2,8.5C2,5.41 4.42,3 7.5,3C9.24,3 10.91,3.81 12,5.08C13.09,3.81 14.76,3 16.5,3C19.58,3 22,5.41 22,8.5C22,12.27 18.6,15.36 13.45,20.03L12,21.35Z" /></svg>`
+    svg: `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>`
   },
   {
     name: 'Star',
-    svg: `<svg viewBox="0 0 24 24" width="100%" height="100%" fill="currentColor"><path d="M12,17.27L18.18,21L16.54,13.97L22,9.24L14.81,8.62L12,2L9.19,8.62L2,9.24L7.45,13.97L5.82,21L12,17.27Z" /></svg>`
+    svg: `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>`
   },
   {
     name: 'Paw Print',
-    svg: `<svg viewBox="0 0 100 100" width="100%" height="100%" fill="currentColor"><path d="M78.1,53.3c-2.3-1.2-5.1-1-7.2,0.6c-2.1,1.6-3,4.2-2.3,6.7c1.7,5.9,3.8,11.7,6.3,17.2c1.2,2.6,3.9,4.2,6.7,3.9 c2.8-0.3,5.1-2.4,5.4-5.2c1.1-7.7,1.1-15.5-0.1-23.2C85.5,50.1,81.9,50.2,78.1,53.3z"/><path d="M49.8,55c-2.1-1.3-4.8-1.4-6.9-0.3c-2.1,1.1-3.6,3.1-4.2,5.4c-2.2,8.3-2,16.7-0.1,25c0.5,2.3,2.4,4.2,4.8,4.6 c2.4,0.4,4.8-0.7,6.1-2.7c2.5-3.8,4.5-7.9,5.9-12.1C56.6,68.9,5.1,60.5,49.8,55z"/><path d="M21.5,53.7c-3.7-3.1-9-2-11.4,2.5c-2.4,4.5-1,10.1,3,13.1c1.9,1.4,4.2,2.1,6.5,2c2.5-0.1,4.9-1.3,6.5-3.2 c3.4-4,5.4-8.8,6.3-13.8C33,51.8,27.3,49.3,21.5,53.7z"/><path d="M51.2,16.2c-5.7-0.4-11.2,2-14.8,6.2c-4.9,5.7-6,13.6-2.8,20.3c3.2,6.7,9.6,11.2,16.9,11.2c7.1,0,13.4-4.4,16.5-10.9 c3.1-6.5,2.1-14.3-2.6-20.1C60.2,17.8,55.8,16.4,51.2,16.2z"/></svg>`
-  },
-  {
-    name: 'Mountains',
-    svg: `<svg viewBox="0 0 512 512" width="100%" height="100%" fill="currentColor"><path d="M304 256h-96v-32h96v32zm-160 0H48v-32h96v32zm320-96v32h-96v-32h96zM32 416h448v-32H32v32zm160-256h-32v32h32v-32zM32 224v-32h64v32H32zm128 64H32v32h128v-32zm32-128V32h-32v128h32zM320 96V32h-32v64h32zm64-64h-32v64h32V32zm-32 256h-32v32h32v-32zm-64-64v32h-32v-32h32zm160-32v32h-32v-32h32zm32 128h-32v32h32v-32z"/></svg>`
+    svg: `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2c-3.03 0-5.5 2.47-5.5 5.5 0 1.94.99 3.65 2.5 4.63.13.08.26.15.4.21-.08.15-.15.3-.21.45-.98 1.48-2.19 3.3-2.19 5.21 0 2.21 1.79 4 4 4s4-1.79 4-4c0-1.91-1.21-3.73-2.19-5.21-.06-.15-.13-.3-.21-.45.14-.06.27-.13.4-.21 1.51-.98 2.5-2.69 2.5-4.63C17.5 4.47 15.03 2 12 2zm3.5 13c0 1.1-.9 2-2 2s-2-.9-2-2c0-1.1.9-2 2-2s2 .9 2 2zm-7 0c0 1.1-.9 2-2 2s-2-.9-2-2c0-1.1.9-2 2-2s2 .9 2 2zm7-7c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm-7 0c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2z"/></svg>`
   },
   {
     name: 'Coffee Cup',
-    svg: `<svg viewBox="0 0 24 24" width="100%" height="100%" fill="currentColor"><path d="M18.5,8H17V6A1,1 0 0,0 16,5H4A1,1 0 0,0 3,6V16A1,1 0 0,0 4,17H16A1,1 0 0,0 17,16V14H18.5A2.5,2.5 0 0,0 21,11.5A2.5,2.5 0 0,0 18.5,8Z" /></svg>`
+    svg: `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M20 3H4v10c0 2.21 1.79 4 4 4h6c2.21 0 4-1.79 4-4v-3h2c1.11 0 2-.89 2-2V5c0-1.11-.89-2-2-2zm0 5h-2V5h2v3zM4 19h16v2H4v-2z"/></svg>`
   },
   {
     name: 'Anchor',
-    svg: `<svg viewBox="0 0 24 24" width="100%" height="100%" fill="currentColor"><path d="M12,2A9,9 0 0,0 3,11C3,14.04 4.5,16.81 7,18.81V21A1,1 0 0,0 8,22H9A1,1 0 0,0 10,21V19H14V21A1,1 0 0,0 15,22H16A1,1 0 0,0 17,21V18.81C19.5,16.81 21,14.04 21,11A9,9 0 0,0 12,2M12,5A2,2 0 0,1 14,7A2,2 0 0,1 12,9A2,2 0 0,1 10,7A2,2 0 0,1 12,5M12,16A5,5 0 0,1 7,11H17A5,5 0 0,1 12,16Z" /></svg>`
+    svg: `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2c-3.31 0-6 2.69-6 6 0 2.05 1.03 3.84 2.61 4.89l-1.47 1.47C4.41 15.1 3 17.43 3 20c0 1.66 1.34 3 3 3h1c1.1 0 2-.9 2-2v-2h4v2c0 1.1.9 2 2 2h1c1.66 0 3-1.34 3-3 0-2.57-1.41-4.9-4.14-5.64l-1.47-1.47C16.97 11.84 18 10.05 18 8c0-3.31-2.69-6-6-6zm0 2c1.1 0 2 .9 2 2s-.9 2-2 2-2-.9-2-2 .9-2 2-2z"/></svg>`
   },
   {
-    name: 'Snowflake',
-    svg: `<svg viewBox="0 0 24 24" width="100%" height="100%" fill="currentColor"><path d="M12,2L9.18,4.73L9.67,8.5L6.61,10.27L5.83,6.59L3,7.92L4.29,11.5L1,12L4.29,12.5L3,16.08L5.83,17.41L6.61,13.73L9.67,15.5L9.18,19.27L12,22L14.82,19.27L14.33,15.5L17.39,13.73L18.17,17.41L21,16.08L19.71,12.5L23,12L19.71,11.5L21,7.92L18.17,6.59L17.39,10.27L14.33,8.5L14.82,4.73L12,2Z" /></svg>`
+    name: 'Music Note',
+    svg: `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/></svg>`
   },
+  {
+    name: 'Tree',
+    svg: `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2L6 8h3v7c0 1.1.9 2 2 2h2c1.1 0 2-.9 2-2V8h3l-6-6z"/></svg>`
+  },
+  {
+    name: 'Crown',
+    svg: `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M5 16L3 5l5.5 5L12 4l3.5 6L21 5l-2 11H5zM19 18H5v2h14v-2z"/></svg>`
+  }
 ];
 
 export const customerReviews = [
@@ -149,20 +146,21 @@ export const customerGalleryItems = [
 // ===================================================================================
 
 // ===================================================================================
-// !! ACTION REQUIRED FOR ENGRAVING FEES !!
+// !! ACTION REQUIRED FOR DYNAMIC ENGRAVING FEES !!
 // ===================================================================================
-// To enable adding engraving fees to the cart, you must:
-// 1. Create a product in your Shopify store to represent the engraving fee tiers.
-//    This product should have variants corresponding to each tier in `TEXT_ENGRAVING_TIERS`.
-//    - Example Variant Name: "Text Engraving (1-5 Characters)", Price: $25.00
-//    - Example Variant Name: "Text Engraving (6-10 Characters)", Price: $30.00
-// 2. Create a separate product for "Image Engraving Fee". This product's price in Shopify
-//    will be overridden by the dynamically calculated price, so you can set it to $0 or a base fee.
-// 3. Get the Variant GID for each of these new variants/products.
-// 4. Replace the placeholder GIDs in `TEXT_ENGRAVING_TIERS` and `IMAGE_FEE_PRODUCT_VARIANT_ID`.
+// The new dynamic pricing engine requires a dedicated product in Shopify to handle
+// the calculated engraving fee. This method is the standard for the Storefront API.
+//
+// 1. Create a new product in Shopify named "Custom Engraving Fee".
+// 2. Set its price to exactly **$1.00**.
+// 3. The calculated fee will be added to the cart by setting the *quantity* of
+//    this $1.00 product. (e.g., a $25 fee becomes quantity 25 of this item).
+// 4. Get the Variant GID for this product and replace the placeholder below.
+// 5. You must also create metafields for your customizable products
+//    (e.g., engraving.labour_rate_per_min) for the calculator to use.
 // ===================================================================================
 
-export const IMAGE_FEE_PRODUCT_VARIANT_ID = 'gid://shopify/ProductVariant/46968633426165';
+export const DYNAMIC_ENGRAVING_FEE_VARIANT_ID = 'gid://shopify/ProductVariant/46968633426165';
 
 export const PRODUCT_FILTERS = {
   type: ['customizable', 'ready-made'],
@@ -196,7 +194,7 @@ export const productCatalog: { [key: string]: Product } = {
         material: 'slate',
         mockupImage: 'https://cdn.shopify.com/s/files/1/0762/2433/2021/files/Cicle_430x.webp?v=1755923098#',
         variantId: 'gid://shopify/ProductVariant/46969021497589',
-        engravingZones: [{ id: 'center', name: 'Center', bounds: { x: 250, y: 150, width: 300, height: 300 } }] 
+        engravingZones: [{ id: 'center', name: 'Center', px_per_mm: 3, bounds: { x: 250, y: 150, width: 300, height: 300 } }] 
       },
       { 
         id: 'slate-coaster-square', 
@@ -204,7 +202,7 @@ export const productCatalog: { [key: string]: Product } = {
         material: 'slate',
         mockupImage: 'https://cdn.shopify.com/s/files/1/0762/2433/2021/files/Square_430x.webp?v=1755923080#',
         variantId: 'gid://shopify/ProductVariant/46969021563125',
-        engravingZones: [{ id: 'center', name: 'Center', bounds: { x: 250, y: 150, width: 300, height: 300 } }] 
+        engravingZones: [{ id: 'center', name: 'Center', px_per_mm: 3, bounds: { x: 250, y: 150, width: 300, height: 300 } }] 
       },
       { 
         id: 'slate-coaster-hexagon', 
@@ -212,7 +210,7 @@ export const productCatalog: { [key: string]: Product } = {
         material: 'slate',
         mockupImage: 'https://cdn.shopify.com/s/files/1/0762/2433/2021/files/Hexagon_430x.webp?v=1755923152#',
         variantId: 'gid://shopify/ProductVariant/46969021464821',
-        engravingZones: [{ id: 'center', name: 'Center', bounds: { x: 250, y: 150, width: 300, height: 300 } }] 
+        engravingZones: [{ id: 'center', name: 'Center', px_per_mm: 3, bounds: { x: 250, y: 150, width: 300, height: 300 } }] 
       },
       { 
         id: 'slate-coaster-heart', 
@@ -220,7 +218,7 @@ export const productCatalog: { [key: string]: Product } = {
         material: 'slate',
         mockupImage: 'https://cdn.shopify.com/s/files/1/0762/2433/2021/files/Heart_430x.webp?v=1755923137#',
         variantId: 'gid://shopify/ProductVariant/46969021530357',
-        engravingZones: [{ id: 'center', name: 'Center', bounds: { x: 250, y: 150, width: 300, height: 300 } }] 
+        engravingZones: [{ id: 'center', name: 'Center', px_per_mm: 3, bounds: { x: 250, y: 150, width: 300, height: 300 } }] 
       }
     ]
   },
@@ -261,7 +259,7 @@ export const productCatalog: { [key: string]: Product } = {
         material: 'leather',
         mockupImage: 'https://cdn.shopify.com/s/files/1/0762/2433/2021/files/Saccd85451d5a4e13a3c08b983eb1e92e6.webp?v=1755435098',
         variantId: 'gid://shopify/ProductVariant/46958815281397',
-        engravingZones: [{ id: 'front', name: 'Front', bounds: { x: 250, y: 300, width: 300, height: 150 } }] 
+        engravingZones: [{ id: 'front', name: 'Front', px_per_mm: 4, bounds: { x: 250, y: 300, width: 300, height: 150 } }] 
       },
       { 
         id: 'leather-key-organizer-brown', 
@@ -270,7 +268,7 @@ export const productCatalog: { [key: string]: Product } = {
         material: 'leather',
         mockupImage: 'https://cdn.shopify.com/s/files/1/0762/2433/2021/files/S9e94de1e9a794829a6523d0d1f47408fg.webp?v=1755435098',
         variantId: 'gid://shopify/ProductVariant/46958815314165',
-        engravingZones: [{ id: 'front', name: 'Front', bounds: { x: 250, y: 300, width: 300, height: 150 } }] 
+        engravingZones: [{ id: 'front', name: 'Front', px_per_mm: 4, bounds: { x: 250, y: 300, width: 300, height: 150 } }] 
       },
       { 
         id: 'leather-key-organizer-blue', 
@@ -279,7 +277,7 @@ export const productCatalog: { [key: string]: Product } = {
         material: 'leather',
         mockupImage: 'https://cdn.shopify.com/s/files/1/0762/2433/2021/files/Sf177634ae202406fae7158ffd2c5d407n.webp?v=1755435097',
         variantId: 'gid://shopify/ProductVariant/46958815248629',
-        engravingZones: [{ id: 'front', name: 'Front', bounds: { x: 250, y: 300, width: 300, height: 150 } }] 
+        engravingZones: [{ id: 'front', name: 'Front', px_per_mm: 4, bounds: { x: 250, y: 300, width: 300, height: 150 } }] 
       },
       { 
         id: 'leather-key-organizer-red', 
@@ -288,7 +286,7 @@ export const productCatalog: { [key: string]: Product } = {
         material: 'leather',
         mockupImage: 'https://cdn.shopify.com/s/files/1/0762/2433/2021/files/S50b87f31fd2c41578320161d35d492709.webp?v=1755435098',
         variantId: 'gid://shopify/ProductVariant/46958815346933',
-        engravingZones: [{ id: 'front', name: 'Front', bounds: { x: 250, y: 300, width: 300, height: 150 } }] 
+        engravingZones: [{ id: 'front', name: 'Front', px_per_mm: 4, bounds: { x: 250, y: 300, width: 300, height: 150 } }] 
       }
     ]
   },
@@ -310,8 +308,8 @@ export const productCatalog: { [key: string]: Product } = {
         mockupImage: 'https://cdn.shopify.com/s/files/1/0762/2433/2021/files/S8f19d989cf7e4809bb17bfa1eed83bcbN_430x.webp?v=1755933870#',
         variantId: 'gid://shopify/ProductVariant/46974554013941',
         engravingZones: [
-            { id: 'front', name: 'Front Side', bounds: { x: 100, y: 128, width: 600, height: 343 } },
-            { id: 'back', name: 'Back Side', bounds: { x: 100, y: 128, width: 600, height: 343 } }
+            { id: 'front', name: 'Front Side', px_per_mm: 6.7, bounds: { x: 100, y: 128, width: 600, height: 343 } },
+            { id: 'back', name: 'Back Side', px_per_mm: 6.7, bounds: { x: 100, y: 128, width: 600, height: 343 } }
         ] 
       },
       { 
@@ -322,8 +320,8 @@ export const productCatalog: { [key: string]: Product } = {
         mockupImage: 'https://cdn.shopify.com/s/files/1/0762/2433/2021/files/S413680f4d9154642a8709de9cdf60c57I_430x.webp?v=1755933870#',
         variantId: 'gid://shopify/ProductVariant/46974553850101',
         engravingZones: [
-            { id: 'front', name: 'Front Side', bounds: { x: 100, y: 128, width: 600, height: 343 } },
-            { id: 'back', name: 'Back Side', bounds: { x: 100, y: 128, width: 600, height: 343 } }
+            { id: 'front', name: 'Front Side', px_per_mm: 6.7, bounds: { x: 100, y: 128, width: 600, height: 343 } },
+            { id: 'back', name: 'Back Side', px_per_mm: 6.7, bounds: { x: 100, y: 128, width: 600, height: 343 } }
         ] 
       },
       { 
@@ -334,8 +332,8 @@ export const productCatalog: { [key: string]: Product } = {
         mockupImage: 'https://cdn.shopify.com/s/files/1/0762/2433/2021/files/S34b021b7b6d34369a63c64ca46f4915dt_430x.webp?v=1755933871#',
         variantId: 'gid://shopify/ProductVariant/46974553882869',
         engravingZones: [
-            { id: 'front', name: 'Front Side', bounds: { x: 100, y: 128, width: 600, height: 343 } },
-            { id: 'back', name: 'Back Side', bounds: { x: 100, y: 128, width: 600, height: 343 } }
+            { id: 'front', name: 'Front Side', px_per_mm: 6.7, bounds: { x: 100, y: 128, width: 600, height: 343 } },
+            { id: 'back', name: 'Back Side', px_per_mm: 6.7, bounds: { x: 100, y: 128, width: 600, height: 343 } }
         ] 
       },
       { 
@@ -346,8 +344,8 @@ export const productCatalog: { [key: string]: Product } = {
         mockupImage: 'https://cdn.shopify.com/s/files/1/0762/2433/2021/files/S1ab1d5688c854687a67671043ceb872ck_430x.webp?v=1755933871#',
         variantId: 'gid://shopify/ProductVariant/46974553817333',
         engravingZones: [
-            { id: 'front', name: 'Front Side', bounds: { x: 100, y: 128, width: 600, height: 343 } },
-            { id: 'back', name: 'Back Side', bounds: { x: 100, y: 128, width: 600, height: 343 } }
+            { id: 'front', name: 'Front Side', px_per_mm: 6.7, bounds: { x: 100, y: 128, width: 600, height: 343 } },
+            { id: 'back', name: 'Back Side', px_per_mm: 6.7, bounds: { x: 100, y: 128, width: 600, height: 343 } }
         ] 
       },
       { 
@@ -358,8 +356,8 @@ export const productCatalog: { [key: string]: Product } = {
         mockupImage: 'https://cdn.shopify.com/s/files/1/0762/2433/2021/files/S78c13580d82b4794977cfd301b7e836cl_430x.webp?v=1755933871#',
         variantId: 'gid://shopify/ProductVariant/46974553981173',
         engravingZones: [
-            { id: 'front', name: 'Front Side', bounds: { x: 100, y: 128, width: 600, height: 343 } },
-            { id: 'back', name: 'Back Side', bounds: { x: 100, y: 128, width: 600, height: 343 } }
+            { id: 'front', name: 'Front Side', px_per_mm: 6.7, bounds: { x: 100, y: 128, width: 600, height: 343 } },
+            { id: 'back', name: 'Back Side', px_per_mm: 6.7, bounds: { x: 100, y: 128, width: 600, height: 343 } }
         ] 
       },
       { 
@@ -370,8 +368,8 @@ export const productCatalog: { [key: string]: Product } = {
         mockupImage: 'https://cdn.shopify.com/s/files/1/0762/2433/2021/files/Sa6f9f7e533c44479a41fde0cf67d64c0d_430x.webp?v=1755933871#',
         variantId: 'gid://shopify/ProductVariant/46974553915637',
         engravingZones: [
-            { id: 'front', name: 'Front Side', bounds: { x: 100, y: 128, width: 600, height: 343 } },
-            { id: 'back', name: 'Back Side', bounds: { x: 100, y: 128, width: 600, height: 343 } }
+            { id: 'front', name: 'Front Side', px_per_mm: 6.7, bounds: { x: 100, y: 128, width: 600, height: 343 } },
+            { id: 'back', name: 'Back Side', px_per_mm: 6.7, bounds: { x: 100, y: 128, width: 600, height: 343 } }
         ] 
       },
       { 
@@ -382,8 +380,8 @@ export const productCatalog: { [key: string]: Product } = {
         mockupImage: 'https://cdn.shopify.com/s/files/1/0762/2433/2021/files/S33f3541a914a49d18a774cd960f26ad5Z_430x.webp?v=1755933870#',
         variantId: 'gid://shopify/ProductVariant/46974553948405',
         engravingZones: [
-            { id: 'front', name: 'Front Side', bounds: { x: 100, y: 128, width: 600, height: 343 } },
-            { id: 'back', name: 'Back Side', bounds: { x: 100, y: 128, width: 600, height: 343 } }
+            { id: 'front', name: 'Front Side', px_per_mm: 6.7, bounds: { x: 100, y: 128, width: 600, height: 343 } },
+            { id: 'back', name: 'Back Side', px_per_mm: 6.7, bounds: { x: 100, y: 128, width: 600, height: 343 } }
         ] 
       },
       { 
@@ -394,8 +392,8 @@ export const productCatalog: { [key: string]: Product } = {
         mockupImage: 'https://cdn.shopify.com/s/files/1/0762/2433/2021/files/S0041519b03924a0bb1270cca1a68deb5U_430x.webp?v=1755933871#',
         variantId: 'gid://shopify/ProductVariant/46974554046709',
         engravingZones: [
-            { id: 'front', name: 'Front Side', bounds: { x: 100, y: 128, width: 600, height: 343 } },
-            { id: 'back', name: 'Back Side', bounds: { x: 100, y: 128, width: 600, height: 343 } }
+            { id: 'front', name: 'Front Side', px_per_mm: 6.7, bounds: { x: 100, y: 128, width: 600, height: 343 } },
+            { id: 'back', name: 'Back Side', px_per_mm: 6.7, bounds: { x: 100, y: 128, width: 600, height: 343 } }
         ] 
       },
     ]

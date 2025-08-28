@@ -8,6 +8,9 @@ export interface EngravingZone {
     width: number; 
     height: number; 
   };
+  // The conversion factor from canvas pixels to real-world millimeters.
+  // Example: If a 300px wide zone represents a 100mm area, px_per_mm = 3.
+  px_per_mm: number;
 }
 
 export interface ProductVariation {
@@ -35,11 +38,18 @@ export interface Product {
 
 export interface PriceDetails {
   base: number;
-  text: number;
-  images: number;
-  total: number;
-  characterCount: number;
+  material: number;
+  setup: number;
+  vectorize: number;
+  photo: number;
+  engravingCost: number;
+  extraAreaCost: number;
+  subtotal: number; // Price per item before discount & quantity
+  discount: number; // as a percentage, e.g., 0.1 for 10%
+  quantity: number;
+  total: number; // Final total price for all items
 }
+
 
 // Local representation of an item to be added to the cart
 export interface CartItem {
@@ -120,8 +130,14 @@ export interface ShopifyVariant {
   price: ShopifyPrice;
 }
 
+export interface ShopifyMetafield {
+  key: string;
+  value: string;
+  type: string;
+}
+
 export interface ShopifyProduct {
-  id: string;
+  id: string; // This is the Product GID
   handle: string;
   title: string;
   variants: {
@@ -132,6 +148,8 @@ export interface ShopifyProduct {
   featuredImage?: {
     url: string;
   };
+  engravingMetafields?: ShopifyMetafield[];
+  customMetafields?: ShopifyMetafield[];
 }
 
 
